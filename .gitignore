@@ -1,0 +1,13 @@
+/TODO
+#backend ignores
+backend/.env
+backend/bin/
+backend/*.log
+
+#frontend ignores
+frontend/.env
+frontend/node_modules/
+frontend/dist/
+frontend/.DS_Store
+frontend/.next/
+

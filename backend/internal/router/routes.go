@@ -1,66 +1,62 @@
 package router
 
 import (
-	"github.com/faisal-990/ProjectInvestApp/backend/internal/controllers/auth"
-	"github.com/faisal-990/ProjectInvestApp/backend/internal/controllers/dashboard"
-	"github.com/faisal-990/ProjectInvestApp/backend/internal/controllers/investor"
-	"github.com/faisal-990/ProjectInvestApp/backend/internal/controllers/portfolio"
+	"github.com/faisal-990/ProjectInvestApp/backend/internal/controllers"
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
-
-func InitializeRoutes(router *gin.Engine) {
-
+func InitializeRoutes(
+	router *gin.Engine,
+	authHandler *controllers.AuthHandler,
+	dashboardHandler *controllers.DashboardHandler,
+	investorHandler *controllers.InvestorHandler,
+	portfolioHandler *controllers.PortfolioHandler,
+) {
 	router.Use(middlewares.LoggerMiddleware())
 	api := router.Group("/api")
 
 	// Auth Routes
 	authGroup := api.Group("/auth")
 	{
-		authGroup.POST("/login", auth.HandleAuthLogin)
-		authGroup.POST("/signup", auth.HandleAuthSignup)
-		authGroup.POST("/forgot-password", auth.HandleAuthForgotPassword)
-
-		// ✅ Protect only /me
-		authGroup.POST("/me", middlewares.AuthMiddlewear(), auth.HandleAuthForMe)
+		authGroup.POST("/login", authHandler.HandleAuthLogin)
+		authGroup.POST("/signup", authHandler.HandleAuthSignup)
+		authGroup.POST("/forgot-password", authHandler.HandleAuthForgotPassword)
+		authGroup.POST("/me", middlewares.AuthMiddlewear(), authHandler.HandleAuthForMe)
 	}
 
 	// Investor Routes
 	investorGroup := api.Group("/investor")
 	{
-		investorGroup.GET("/", investor.HandleGetInvestor)
-		investorGroup.GET("/:id", investor.HandleGetInvestorById)
-		investorGroup.GET("/:id/trades", investor.HandleGetInvestorTrades)
-
-		// ✅ Protect only this one
-		investorGroup.DELETE("/:id/follow", middlewares.AuthMiddlewear(), investor.HandleUnfollowInvestor)
-		investorGroup.POST("/:id/follow", investor.HandleFollowInvestor)
+		investorGroup.GET("/", investorHandler.HandleGetInvestor)
+		investorGroup.GET("/:id", investorHandler.HandleGetInvestorById)
+		investorGroup.GET("/:id/trades", investorHandler.HandleGetInvestorTrades)
+		investorGroup.DELETE("/:id/follow", middlewares.AuthMiddlewear(), investorHandler.HandleUnfollowInvestor)
+		investorGroup.POST("/:id/follow", investorHandler.HandleFollowInvestor)
 	}
 
-	// Trade Routes — ✅ protect the whole group
+	// Trade Routes
 	tradeGroup := api.Group("/trade")
 	tradeGroup.Use(middlewares.AuthMiddlewear())
 	{
-		tradeGroup.POST("/buy", portfolio.HandleBuyStocks)
-		tradeGroup.POST("/sell", portfolio.HandleSellStocks)
-		tradeGroup.GET("/history", portfolio.HandleGetUsersTradeHistory)
+		tradeGroup.POST("/buy", portfolioHandler.HandleBuyStocks)
+		tradeGroup.POST("/sell", portfolioHandler.HandleSellStocks)
+		tradeGroup.GET("/history", portfolioHandler.HandleGetUsersTradeHistory)
 	}
 
-	// Portfolio Routes — ✅ protect the whole group
+	// Portfolio Routes
 	portfolioGroup := api.Group("/portfolio")
 	portfolioGroup.Use(middlewares.AuthMiddlewear())
 	{
-		portfolioGroup.GET("/stats", portfolio.HandleGetUserPortfolioStats)
-		portfolioGroup.GET("/", portfolio.HandleGetUsersStockHoldings)
+		portfolioGroup.GET("/stats", portfolioHandler.HandleGetUserPortfolioStats)
+		portfolioGroup.GET("/", portfolioHandler.HandleGetUsersStockHoldings)
 	}
 
-	// Dashboard Routes — ❌ no auth middleware
+	// Dashboard Routes
 	dashboardGroup := api.Group("/dashboard")
 	{
-		dashboardGroup.GET("/fundamentals", dashboard.HandleGetStocksFundamentals)
-		dashboardGroup.GET("/graph/:symbol", dashboard.HandleGetStocksDetails)
-		dashboardGroup.GET("/news", dashboard.HandleGetStocksNews)
+		dashboardGroup.GET("/fundamentals", dashboardHandler.HandleGetStocksFundamentals)
+		dashboardGroup.GET("/graph/:symbol", dashboardHandler.HandleGetStocksDetails)
+		dashboardGroup.GET("/news", dashboardHandler.HandleGetStocksNews)
 	}
 }
-

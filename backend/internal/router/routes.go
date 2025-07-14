@@ -27,6 +27,7 @@ func InitializeRoutes(
 
 	// Investor Routes
 	investorGroup := api.Group("/investor")
+	investorGroup.Use(middlewares.AuthMiddlewear())
 	{
 		investorGroup.GET("/", investorHandler.HandleGetInvestor)
 		investorGroup.GET("/:id", investorHandler.HandleGetInvestorById)

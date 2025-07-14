@@ -13,3 +13,7 @@ func LogInfoF(msg string, value string) {
 func LogError(msg string, err error) {
 	log.Fatalf("[ERROR] \n message :%s \n error:%s", msg, err)
 }
+
+func LogErrorf(msg string) {
+	log.Fatalf("[ERROR] \n message :%s \n ", msg)
+}

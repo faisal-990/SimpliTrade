@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +20,18 @@ func NewInvestorHandler(s service.InvestorService) *InvestorHandler {
 // this function is responsible to get all the investors data
 // like once the investor page is loaded
 func (i *InvestorHandler) HandleGetInvestor(c *gin.Context) {
+	value, exist := c.Get("name")
+	if !exist {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "logged in but user name not found",
+		})
+	}
+	name := value.(string)
+
+	c.JSON(http.StatusOK, gin.H{
+		"welcome ": name,
+		"message":  "so finally you have implemented jwt , awesome , way to go bro , you are the man!!!!!",
+	})
 }
 
 // this function is responsible to get a sinlge investor data based on the investor id

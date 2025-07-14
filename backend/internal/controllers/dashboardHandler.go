@@ -19,6 +19,9 @@ func (d *DashboardHandler) HandleGetStocksDetails(c *gin.Context) {
 }
 
 func (d *DashboardHandler) HandleGetStocksNews(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "market is hot right now ",
+	})
 }
 
 func (d *DashboardHandler) HandleGetStocksFundamentals(c *gin.Context) {

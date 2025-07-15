@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -36,10 +35,13 @@ func main() {
 	authservice := service.NewAuthService(authrepo)
 	authhandler := controllers.NewAuthHandler(authservice)
 
+	// News
+	newsservice := service.NewNewsService()
+
 	// dashboard
 	dashboardrepo := repository.NewDashboardRepo(db)
 	dashboardservice := service.NewDashboardService(dashboardrepo)
-	dashboardhandler := controllers.NewDashboardHandler(dashboardservice)
+	dashboardhandler := controllers.NewDashboardHandler(dashboardservice, newsservice)
 
 	// investor
 	investorrepo := repository.NewInvestorRepo(db)
@@ -52,11 +54,11 @@ func main() {
 	portfoliohandler := controllers.NewPortfolioHandler(portfolioservice)
 
 	// gemerating token to test jwt aith
-	token, err := utils.GenerateJwt("sawez")
-	if err != nil {
-		log.Fatal("failed to generate token")
-	}
-	fmt.Printf("TOKEN: %s\n", token)
+	//token, err := utils.GenerateJwt("sawez")
+	//if err != nil {
+	//log.Fatal("failed to generate token")
+	//}
+	//fmt.Printf("TOKEN: %s\n", token)
 	utils.LogInfo("Loaded all the modules , Now starting gin Engine")
 	r := gin.Default()
 	log.Println("✅ Created Gin engine")

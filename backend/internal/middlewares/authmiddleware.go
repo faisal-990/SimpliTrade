@@ -30,7 +30,7 @@ func AuthMiddlewear() gin.HandlerFunc {
 		token := parts[1]
 		claims, err := utils.ValidateJwt(token)
 		if err != nil {
-			utils.LogError("invalid user", err)
+			utils.LogInfoF("invalid user", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"message": "invalid token",
 			})

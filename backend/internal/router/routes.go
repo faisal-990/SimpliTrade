@@ -21,7 +21,7 @@ func InitializeRoutes(
 	{
 		authGroup.POST("/login", authHandler.HandleAuthLogin)
 		authGroup.POST("/signup", authHandler.HandleAuthSignup)
-		authGroup.POST("/forgot-password", authHandler.HandleAuthForgotPassword)
+		authGroup.POST("/forgot-password", middlewares.AuthMiddlewear())
 		authGroup.POST("/me", middlewares.AuthMiddlewear(), authHandler.HandleAuthForMe)
 	}
 

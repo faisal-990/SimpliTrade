@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/controllers"
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/db"
@@ -73,6 +75,9 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+	fmt.Println("*****************************\n")
+	fmt.Printf("STARTING SERVER AT:%s\n", time.Now())
+	fmt.Println("*****************************\n")
 	log.Printf("🚀 Server running at :%s", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("❌ Failed to start server: %s", err)

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"time"
+	//"time"
 
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/dto"
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/utils"
@@ -21,7 +21,7 @@ func NewNewsService() News {
 }
 
 func (n *news) GetNews() ([]dto.NewsDTO, error) {
-	time.Sleep(time.Second * 2)
+	// time.Sleep(time.Second * 2)
 	cwd, err := os.Getwd()
 	if err != nil {
 		utils.LogError("failed to load working dir", err)
@@ -43,5 +43,5 @@ func (n *news) GetNews() ([]dto.NewsDTO, error) {
 		return wrapper.Feed, nil
 	}
 
-	return wrapper.Feed[:10], nil
+	return wrapper.Feed[:], nil
 }

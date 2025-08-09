@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/faisal-990/ProjectInvestApp/backend/internal/dto"
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/service"
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -20,10 +21,21 @@ func NewAuthHandler(s service.AuthService) *AuthHandler {
 }
 
 func (a *AuthHandler) HandleAuthLogin(c *gin.Context) {
-	name := c.PostForm("name")
-	password := c.PostForm("password")
+	var login dto.Login
+	err := c.BindJSON(&login)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "invalid login details send by the user",
+		})
+	}
+	name := login.Name
+	password := login.Password
 	// TODO :: attach db , and check password of this user in the db
 	//         if correct , send the token , else send message and fail
+	c.JSON(http.StatusOK, gin.H{
+		"name": name,
+		"pass": password,
+	})
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "failed to login",

@@ -1,5 +1,9 @@
+import LoginTest from "./Pages/LoginTest";
+
 function App() {
-    return <></>;
+    return <>
+            <LoginTest />
+        </>;
 }
 
 export default App;

@@ -1,9 +1,13 @@
-import LoginTest from "./Pages/LoginTest";
+import { Routes, Route } from "react-router-dom";
+import Login from "./Pages/Login";
+import TradingDashboard from "./Pages/demo";
 
-function App() {
-    return <>
-            <LoginTest />
-        </>;
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<TradingDashboard/>} />
+      <Route path="/login" element={<Login />} />
+    </Routes>
+  );
 }
 
-export default App;

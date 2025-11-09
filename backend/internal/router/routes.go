@@ -1,10 +1,18 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/controllers"
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/middlewares"
 	"github.com/gin-gonic/gin"
 )
+
+func GethealthInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Server status Running",
+	})
+}
 
 func InitializeRoutes(
 	router *gin.Engine,
@@ -15,6 +23,9 @@ func InitializeRoutes(
 ) {
 	router.Use(middlewares.LoggerMiddleware())
 	api := router.Group("/api")
+	// Health check
+
+	api.GET("/health", GethealthInfo)
 
 	// Auth Routes
 	authGroup := api.Group("/auth")

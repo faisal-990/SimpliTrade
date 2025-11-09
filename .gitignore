@@ -1,4 +1,6 @@
 /TODO
+devlog.md
+db_comments.md
 #backend ignores
 backend/.env
 backend/bin/

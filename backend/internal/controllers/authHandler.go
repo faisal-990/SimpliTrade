@@ -20,29 +20,56 @@ func NewAuthHandler(s service.AuthService) *AuthHandler {
 }
 
 func (a *AuthHandler) HandleAuthLogin(c *gin.Context) {
-}
-
-func (a *AuthHandler) HandleAuthSignup(c *gin.Context) {
-	var loginData dto.Login
-
-	err := c.ShouldBindBodyWithJSON(&loginData)
-	if err != nil {
+	//get the email and password of the user
+	var user dto.Login
+	if err := c.BindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "the json response that you sent is not in proper form",
+			"Illegal credentials format": "Please ensure that the username and password are in the correct manner",
 		})
 		return
 	}
-	name := loginData.Name
-	token, err := utils.GenerateJwt(name)
+	ctx := c.Request.Context()
+	object, err := a.service.AuthenticateUser(ctx, &user)
+	if err != nil {
+		switch err {
+		case utils.ErrWrongPassword:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Invalid password": "Wrong password entered",
+			})
+
+		case utils.ErrInvalidEmail:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Invalid email": "please enter a valid email",
+			})
+
+		case utils.ErrInvalidPassword:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Invalid password type": "please enter a valid password type",
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"Internal server error": err,
+			})
+		}
+		return
+	}
+
+	token, err := utils.GenerateJwt(object.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "server error , failed to generate jwt token",
+			"Token generation failed": err,
 		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+		"Token": token,
 	})
+
+	return
+}
+
+func (a *AuthHandler) HandleAuthSignup(c *gin.Context) {
 }
 
 func (a *AuthHandler) HandleAuthForgotPassword(c *gin.Context) {

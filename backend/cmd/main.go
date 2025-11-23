@@ -31,7 +31,7 @@ func main() {
 	}
 	log.Println("✅ Connected to DB")
 
-	// loading all the layers
+	//loading all the layers
 	// auth
 	authrepo := repository.NewAuthRepo(db)
 	authservice := service.NewAuthService(authrepo)
@@ -55,13 +55,7 @@ func main() {
 	portfolioservice := service.NewPortfolioService(portfoliorepo)
 	portfoliohandler := controllers.NewPortfolioHandler(portfolioservice)
 
-	// gemerating token to test jwt aith
-	//token, err := utils.GenerateJwt("sawez")
-	//if err != nil {
-	//log.Fatal("failed to generate token")
-	//}
-	//fmt.Printf("TOKEN: %s\n", token)
-	utils.LogInfo("Loaded all the modules , Now starting gin Engine")
+	// utils.LogInfo("Loaded all the modules , Now starting gin Engine")
 	r := gin.Default()
 	log.Println("✅ Created Gin engine")
 

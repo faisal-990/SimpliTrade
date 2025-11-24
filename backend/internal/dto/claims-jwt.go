@@ -1,8 +1,11 @@
 package dto
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
 
 type Claims struct {
-	Username string `json:"username"`
+	Id uuid.UUID `json:"id"`
 	jwt.RegisteredClaims
 }

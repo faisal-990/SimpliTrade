@@ -6,15 +6,16 @@ import (
 
 	"github.com/faisal-990/ProjectInvestApp/backend/internal/dto"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 // Use HS256 signing (symmetric key)
 var jwtkey = []byte(os.Getenv("JWT_KEY"))
 
 // GenerateJwt creates a JWT token using HS256
-func GenerateJwt(username string) (string, error) {
+func GenerateJwt(id uuid.UUID) (string, error) {
 	claims := &dto.Claims{
-		Username: username,
+		Id: id,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(10 * time.Minute)),

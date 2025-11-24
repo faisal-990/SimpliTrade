@@ -10,7 +10,7 @@ import (
 type AuthRepo interface {
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetUserByID(ctx context.Context, id string) (*models.User, error)
-	AddUser(ctx context.Context, user *models.User) error
+	CreateUser(ctx context.Context, user *models.User) error
 }
 
 type authRepo struct {
@@ -37,8 +37,9 @@ func (a *authRepo) GetUserByEmail(ctx context.Context, email string) (*models.Us
 	return &object, nil
 }
 
-func (a *authRepo) AddUser(ctx context.Context, user *models.User) error {
-	return nil
+func (a *authRepo) CreateUser(ctx context.Context, user *models.User) error {
+
+	return a.DB.WithContext(ctx).Create(user).Error
 }
 
 func (a *authRepo) GetUserByID(ctx context.Context, id string) (*models.User, error) {

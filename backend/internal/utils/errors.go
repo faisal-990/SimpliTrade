@@ -18,6 +18,10 @@ func Wrap(appError *AppError, err error) *AppError {
 }
 
 var (
+	ErrUserAlreadyExist = &AppError{
+		Code:    "USER ALREADY EXIST",
+		Message: "User you are trying to create already exist in our records",
+	}
 	ErrUserDoesntExist = &AppError{
 		Code:    "USER NOT FOUND",
 		Message: "The user you are looking for doesn't exist in the records",
@@ -34,5 +38,9 @@ var (
 	ErrInvalidPassword = &AppError{
 		Code:    "INVALID PASSWORD",
 		Message: "The format of password entered is invalid",
+	}
+	ErrNoName = &AppError{
+		Code:    "NO NAME FOUND",
+		Message: "Please enter a name while signup",
 	}
 )

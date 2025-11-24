@@ -28,7 +28,7 @@ func AuthMiddlewear() gin.HandlerFunc {
 		}
 
 		token := parts[1]
-		claims, err := utils.ValidateJwt(token)
+		_, err := utils.ValidateJwt(token)
 		if err != nil {
 			utils.LogInfoF("invalid user", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
@@ -38,7 +38,7 @@ func AuthMiddlewear() gin.HandlerFunc {
 		}
 
 		// Set current user in context for downstream use
-		c.Set("name", claims.Username)
+		//	c.Set("name", claims.Username)
 		c.Next() // ✅ Only continue if everything succeeded
 	}
 }

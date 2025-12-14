@@ -149,7 +149,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	rules, err := os.ReadFile(dir + "/internal/strategies/benjamin.yml")
+	rules, err := os.ReadFile(dir + "/internal/strategies/terrySmith.yml")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -164,7 +164,7 @@ func main() {
 	}
 
 	//opening the file to write the output to
-	f, err := os.OpenFile(dir+"/output.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(dir+"/"+config.StrategyName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -173,6 +173,7 @@ func main() {
 	for i := 0; i < len(data); i++ {
 		if satisfy(&config, &data[i]) == true {
 			_, err = f.WriteString(data[i].CompanyName + ",")
+			f.WriteString("\n")
 			if err != nil {
 				fmt.Println(err)
 
@@ -184,7 +185,6 @@ func main() {
 	//create a new stockuniverse file to put stocks that satisfies grahams philosophy
 }
 func satisfy(cfg *StrategyConfig, s *Stock) bool {
-	time.Sleep(time.Millisecond * 1)
 	// --- Valuation ---
 	if s.Metrics.PERatio > cfg.Filters.Valuation.PEMax {
 		return false

@@ -1,0 +1,114 @@
+strategy_name: "Terry Smith Quality Growth Strategy"
+strategy_id: terry_smith_quality_growth
+enabled: true
+
+# -----------------------------------------
+# BUY FILTERS (Modern, Quality + Growth Focus)
+# -----------------------------------------
+filters:
+  valuation:
+    pe_max: 40 # Growth companies can trade high
+    pb_max: 12 # Accept asset-light high PB firms
+    pe_pb_max: 350 # Very tolerant; quality companies command premiums
+    margin_of_safety_min: 0.10
+    use_graham_number: false # Graham number irrelevant for modern firms
+
+  financial_safety:
+    current_ratio_min: 1.0 # Basic liquidity
+    debt_to_equity_max: 1.5 # Accept leveraged but stable firms
+    net_current_asset_rule: false
+
+  stability:
+    eps_positive_years_min: 3 # Only short-term stability required
+    dividend_years_min: 0 # No dividend requirement
+    eps_growth_10yr_min: 0.10 # Must have at least modest LT EPS growth
+
+  # -----------------------------------------
+  # MODERN GROWTH & QUALITY FILTERS
+  # -----------------------------------------
+  quality:
+    roe_min: 0.15 # High return on equity → strong moat
+    gross_margin_min: 0.40 # Indicates high pricing power
+    operating_margin_min: 0.15 # Efficient operations
+
+  growth:
+    revenue_growth_5yr_min: 0.25 # 25% cumulative revenue growth
+    eps_growth_5yr_min: 0.20 # Sustainable EPS growth
+    free_cash_flow_positive: true # Quality companies generate FCF
+
+# -----------------------------------------
+# SCORING PARAMETERS
+# -----------------------------------------
+scoring:
+  intrinsic_value:
+    base_pe: 15 # Much higher than Graham due to growth focus
+    growth_multiplier: 3.0
+    max_growth_rate: 0.25
+    weight: 0.30
+
+  stability:
+    eps_variance_window: 5
+    weight: 0.20
+
+  valuation:
+    weight: 0.20
+
+  earnings_yield:
+    required_multiple_of_bond_yield: 1.2 # Less strict than Graham
+    weight: 0.10
+
+  quality:
+    roe_weight: 0.10
+    margin_weight: 0.10
+
+# -----------------------------------------
+# SELL RULES (Modern Risk Control)
+# -----------------------------------------
+sell_rules:
+  mos_lost_threshold: 1.2 # Sell if price exceeds IV by 20%
+  overvaluation_buffer: 1.10 # Start trimming above IV * 1.10
+
+  violation_filters:
+    pe_limit: 60
+    pb_limit: 15
+    pe_pb_limit: 400
+    debt_to_equity_limit: 2.0
+    current_ratio_limit: 0.8
+    eps_negative: true # Sell if EPS turns negative
+    dividend_cut: false # Dividend irrelevant in strategy
+
+  eps_trend:
+    check_trend: true
+    downtrend_years: 2 # Short-term EPS deterioration → warning
+
+  debt_increase_check: true
+  max_position_size: 0.12 # Max 12% per stock (higher for high conviction)
+
+# -----------------------------------------
+# PORTFOLIO RULES
+# -----------------------------------------
+portfolio:
+  equity_target: 0.85
+  bond_target: 0.15
+
+  rebalance_upper: 0.95
+  rebalance_lower: 0.75
+
+  min_positions: 15
+  max_positions: 35
+
+# -----------------------------------------
+# MODERN ADJUSTMENTS
+# -----------------------------------------
+modern_adjustments:
+  enable: true
+
+  sector_exceptions:
+    technology:
+      current_ratio_min: 0.8
+      debt_to_equity_max: 2.5
+    healthcare:
+      debt_to_equity_max: 2.0
+
+  quality_checks:
+    roe_min: 0.12

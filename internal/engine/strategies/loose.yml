@@ -1,0 +1,95 @@
+strategy_name: "Test Strategy (Loose)"
+strategy_id: test_strategy_01
+enabled: true
+
+# -----------------------------------------
+# BUY FILTERS (RELAXED FOR TESTING)
+# -----------------------------------------
+filters:
+  valuation:
+    pe_max: 100.0 # Was 15.0 - Now allows almost anything
+    pb_max: 10.0 # Was 1.5
+    pe_pb_max: 500.0 # Was 22.5
+    margin_of_safety_min: 0.0 # Disabled MOS requirement
+
+    # Graham Number Check
+    # Set to false to ensure high price stocks still pass
+    use_graham_number: false
+
+  financial_safety:
+    current_ratio_min: 0.1 # Was 2.0 - Accepts very poor liquidity
+    debt_to_equity_max: 10.0 # Was 0.5 - Accepts high debt
+    net_current_asset_rule: false # Disabled strict NCAV rule
+
+  stability:
+    eps_positive_years_min: 0 # Was 10
+    dividend_years_min: 0 # Was 10
+    eps_growth_10yr_min: -0.5 # Accepts negative growth
+
+# -----------------------------------------
+# SCORING PARAMETERS (Unchanged mostly)
+# -----------------------------------------
+scoring:
+  intrinsic_value:
+    base_pe: 25.0 # Higher base
+    growth_multiplier: 2
+    max_growth_rate: 0.50
+    weight: 0.40
+
+  stability:
+    eps_variance_window: 5
+    weight: 0.20
+
+  valuation:
+    weight: 0.20
+
+  earnings_yield:
+    required_multiple_of_bond_yield: 0.5 # Very easy to pass
+    weight: 0.20
+
+# -----------------------------------------
+# SELL RULES (Loose)
+# -----------------------------------------
+sell_rules:
+  mos_lost_threshold: 2.0
+  overvaluation_buffer: 1.5
+
+  violation_filters:
+    pe_limit: 200.0
+    pb_limit: 20.0
+    pe_pb_limit: 1000.0
+    debt_to_equity_limit: 20.0
+    current_ratio_limit: 0.01
+    eps_negative: false
+    dividend_cut: false
+
+  eps_trend:
+    check_trend: false
+    downtrend_years: 10
+
+  debt_increase_check: false
+  max_position_size: 1.0 # 100% of portfolio allowed
+
+# -----------------------------------------
+# PORTFOLIO RULES
+# -----------------------------------------
+portfolio:
+  equity_target: 1.0
+  bond_target: 0.0
+  rebalance_upper: 1.0
+  rebalance_lower: 0.0
+  min_positions: 1
+  max_positions: 1000
+
+# -----------------------------------------
+# MODERN ADAPTATIONS
+# -----------------------------------------
+modern_adjustments:
+  enable: true
+  sector_exceptions:
+    utilities:
+      current_ratio_min: 0.1
+    financials:
+      debt_to_equity_max: 20.0
+  quality_checks:
+    roe_min: 0.0 # No ROE requirement

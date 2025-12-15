@@ -1,0 +1,102 @@
+strategy_name: "Benjamin Graham Defensive Strategy"
+strategy_id: graham_defensive
+enabled: true
+
+# -----------------------------------------
+# BUY FILTERS (Strict Graham Criteria)
+# -----------------------------------------
+filters:
+  valuation:
+    pe_max: 15
+    pb_max: 1.5
+    pe_pb_max: 22.5
+
+    # Margin of Safety: buy only if price <= intrinsic_value * mos_threshold
+    margin_of_safety_min: 0.30
+
+    # Graham Number = sqrt(22.5 * EPS * BVPS)
+    use_graham_number: true
+
+  financial_safety:
+    current_ratio_min: 2.0
+    debt_to_equity_max: 0.5
+    net_current_asset_rule: true # long-term debt <= net current assets
+
+  stability:
+    eps_positive_years_min: 10
+    dividend_years_min: 10
+    eps_growth_10yr_min: 0.33 # 33% cumulative growth
+
+# -----------------------------------------
+# SCORING PARAMETERS
+# (Used to rank stocks that passed filters)
+# -----------------------------------------
+scoring:
+  intrinsic_value:
+    base_pe: 8.5
+    growth_multiplier: 2
+    max_growth_rate: 0.15
+    weight: 0.40
+
+  stability:
+    eps_variance_window: 5 # years
+    weight: 0.20
+
+  valuation:
+    weight: 0.20
+
+  earnings_yield:
+    required_multiple_of_bond_yield: 2.0
+    weight: 0.20
+
+# -----------------------------------------
+# SELL RULES
+# -----------------------------------------
+sell_rules:
+  # Overvaluation / MOS loss
+  mos_lost_threshold: 1.0 # price >= intrinsic_value
+  overvaluation_buffer: 0.90 # optional: price > IV * 0.9
+
+  violation_filters:
+    pe_limit: 20
+    pb_limit: 2.0
+    pe_pb_limit: 22.5
+    debt_to_equity_limit: 0.7
+    current_ratio_limit: 1.5
+    eps_negative: true
+    dividend_cut: true
+
+  eps_trend:
+    check_trend: true
+    downtrend_years: 3
+
+  debt_increase_check: true
+  max_position_size: 0.10 # 10% of portfolio
+
+# -----------------------------------------
+# PORTFOLIO RULES (Graham Defensive)
+# -----------------------------------------
+portfolio:
+  equity_target: 0.50
+  bond_target: 0.50
+
+  rebalance_upper: 0.75
+  rebalance_lower: 0.25
+
+  min_positions: 10
+  max_positions: 30
+
+# -----------------------------------------
+# MODERN ADAPTATIONS (Optional)
+# -----------------------------------------
+modern_adjustments:
+  enable: true
+
+  sector_exceptions:
+    utilities:
+      current_ratio_min: 1.2
+    financials:
+      debt_to_equity_max: 1.0
+
+  quality_checks:
+    roe_min: 0.15

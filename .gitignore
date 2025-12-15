@@ -1,19 +1,38 @@
-RoboInvestor/internals/seed/mock_stocks_list.json
+# --- Secrets & Environment Variables ---
+# Ignore .env at root and in any subfolder
+.env
+.env.*
+# Exception: allow example files so others know what keys are needed
+!.env.example
+
+# --- Go (Root Level) ---
+# Binaries and build artifacts
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+
+# --- Node / Frontend (Universal) ---
+# These patterns work regardless of where frontend is located
+node_modules/
+.next/
+coverage/
+.DS_Store
+
+# --- Project Specific Ignores ---
+internal/engine/seed/mock_stocks_list.json
 /TODO
 devlog.md
 db_comments.md
-#backend ignores
-backend/.env
-backend/bin/
-backend/*.log
-
-#frontend ignores
-frontend/.env
-frontend/node_modules/
-frontend/dist/
-frontend/.DS_Store
-frontend/.next/
-
 data/
-bin/
-tmp/
+
+# --- Editor/IDE ---
+.vscode/
+.idea/

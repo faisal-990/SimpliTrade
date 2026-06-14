@@ -10,10 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ErrInvestorInUse means a custom investor can't be deleted because money is
-// still allocated to it.
-var ErrInvestorInUse = errors.New("repository: investor has active allocations")
-
 // CustomStrategyRepo persists user-authored investors. Listing/loading their
 // configs lets the engine and backtester treat them exactly like preset bots.
 type CustomStrategyRepo interface {
@@ -21,8 +17,9 @@ type CustomStrategyRepo interface {
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]models.CustomStrategy, error)
 	ListAll(ctx context.Context) ([]models.CustomStrategy, error)
 	GetByInvestorID(ctx context.Context, investorID uuid.UUID) (*models.CustomStrategy, error)
-	// Delete removes a custom investor the user owns (identity cascades). It
-	// refuses while active copy-allocations still reference it.
+	// Delete removes a custom investor the user owns. Any active copy-allocations
+	// to it are liquidated first (cash returned to each owner), then the bot
+	// identity is removed (follows, performance, account, holdings, trades cascade).
 	Delete(ctx context.Context, userID, investorID uuid.UUID) error
 }
 
@@ -62,15 +59,34 @@ func (r *customStrategyRepo) Delete(ctx context.Context, userID, investorID uuid
 			}
 			return err
 		}
-		// Refuse while anyone still has money allocated to this investor.
-		var active int64
-		if err := tx.Model(&models.Account{}).
-			Where("kind = ? AND investor_id = ? AND is_active = ?", models.KindCopy, investorID, true).
-			Count(&active).Error; err != nil {
+		// Liquidate any active copy-allocations to this investor first, returning
+		// each owner's cash to their primary account — so deleting is one click.
+		var copies []models.Account
+		if err := tx.Where("kind = ? AND investor_id = ? AND is_active = ?", models.KindCopy, investorID, true).
+			Find(&copies).Error; err != nil {
 			return err
 		}
-		if active > 0 {
-			return ErrInvestorInUse
+		for _, c := range copies {
+			var holdings []models.Holding
+			if err := tx.Preload("Stock").Where("account_id = ?", c.ID).Find(&holdings).Error; err != nil {
+				return err
+			}
+			proceeds := c.Balance
+			for _, h := range holdings {
+				proceeds += h.Quantity * h.Stock.CurrentPrice
+			}
+			if err := tx.Where("account_id = ?", c.ID).Delete(&models.Holding{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&models.Account{}).
+				Where("user_id = ? AND kind = ? AND mode = ?", c.UserID, models.KindPrimary, models.ModeSim).
+				Update("balance", gorm.Expr("balance + ?", proceeds)).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&models.Account{}).Where("id = ?", c.ID).
+				Updates(map[string]any{"balance": 0, "is_active": false}).Error; err != nil {
+				return err
+			}
 		}
 		// Delete the identity — FK cascades remove follows, performance, the bot's
 		// account, holdings and trades.

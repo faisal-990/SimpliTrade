@@ -1,11 +1,18 @@
 // Command seed bootstraps the stock universe into the database using the
-// configured market-data provider (the FakeProvider until a real one is wired
-// in at T9). It is idempotent — safe to re-run; existing symbols are updated.
+// configured market-data provider (FakeProvider by default; a real provider when
+// MARKET_API_KEY is set). It is idempotent — safe to re-run; existing symbols are
+// updated.
+//
+// SEED_LIMIT (env) caps how many symbols are seeded — useful on a free API tier
+// where seeding the whole universe would exceed the rate/daily limits. Unset or
+// 0 means the full universe.
 package main
 
 import (
 	"context"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/faisal-990/ProjectInvestApp/internal/marketdata"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/config"
@@ -28,10 +35,21 @@ func main() {
 	// key is set). The seeder is unchanged regardless of source.
 	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey)
 
+	universe := marketdata.DefaultUniverse
+	if limit := seedLimit(); limit > 0 && limit < len(universe) {
+		universe = universe[:limit]
+		log.Printf("ℹ️  SEED_LIMIT=%d — seeding a subset (free-tier friendly)", limit)
+	}
+
 	seeder := marketdata.NewSeeder(provider, repository.NewStockRepo(db))
-	n, err := seeder.Seed(context.Background(), marketdata.DefaultUniverse)
+	n, err := seeder.Seed(context.Background(), universe)
 	if err != nil {
 		log.Fatalf("❌ seed failed after %d stocks: %v", n, err)
 	}
 	log.Printf("✅ seeded %d stocks (provider=%s)", n, cfg.Market.Provider)
+}
+
+func seedLimit() int {
+	n, _ := strconv.Atoi(os.Getenv("SEED_LIMIT"))
+	return n
 }

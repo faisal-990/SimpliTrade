@@ -19,6 +19,7 @@ type InvestorService interface {
 	Trades(ctx context.Context, investorID string, limit, offset int) ([]dto.TradeHistoryItem, error)
 	Follow(ctx context.Context, followerID, investorID string) error
 	Unfollow(ctx context.Context, followerID, investorID string) error
+	Following(ctx context.Context, followerID string) ([]dto.InvestorDTO, error)
 	Feed(ctx context.Context, followerID string, limit int) ([]dto.FeedItem, error)
 }
 
@@ -101,6 +102,22 @@ func (s *investorService) Unfollow(ctx context.Context, followerID, investorID s
 		return httpx.Internal("could not unfollow investor").WithCause(err)
 	}
 	return nil
+}
+
+func (s *investorService) Following(ctx context.Context, followerID string) ([]dto.InvestorDTO, error) {
+	id, err := uuid.Parse(followerID)
+	if err != nil {
+		return nil, httpx.Unauthorized("invalid user identity")
+	}
+	items, err := s.repo.ListFollowedInvestors(ctx, id)
+	if err != nil {
+		return nil, httpx.Internal("could not load followed investors").WithCause(err)
+	}
+	out := make([]dto.InvestorDTO, 0, len(items))
+	for _, it := range items {
+		out = append(out, toInvestorDTO(it))
+	}
+	return out, nil
 }
 
 func (s *investorService) Feed(ctx context.Context, followerID string, limit int) ([]dto.FeedItem, error) {

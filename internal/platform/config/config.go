@@ -69,15 +69,29 @@ type AuthConfig struct {
 }
 
 type MarketConfig struct {
-	Provider   string // "fake" until a real provider is wired in
-	APIKey     string
-	RatePerMin int // max upstream calls/min (free tiers are tiny); 0 = unlimited
+	Provider     string // "fake" until a real provider is wired in
+	APIKey       string
+	RatePerMin   int // max upstream calls/min (free tiers are tiny); 0 = unlimited
+	RefreshLimit int // max symbols refreshed per engine cycle; 0 = all
+	// Fundamentals can come from a different source than prices, since most free
+	// price feeds gate fundamentals. Empty key = no separate source (price feed's
+	// own fundamentals, if any, are used).
+	FundamentalsProvider string // e.g. "finnhub"
+	FundamentalsAPIKey   string
 }
 
 // EngineConfig governs the strategy daemon (Tower 2).
 type EngineConfig struct {
 	TickInterval  time.Duration // how often the engine refreshes + decides
 	StrategiesDir string        // directory of investor strategy YAMLs
+	// Sandbox swaps the real market refresher for a synthetic random-walk ticker,
+	// so the daemon can run end-to-end without an external (rate-limited) feed —
+	// useful for demos and when the real market is closed.
+	Sandbox bool
+	// IgnoreMarketHours runs the LIVE (real-provider) engine even when the market
+	// is closed — for testing the real-data path off-hours. Production leaves it
+	// false so the daemon trades only during the session.
+	IgnoreMarketHours bool
 }
 
 // devJWTSecret is the only insecure fallback we tolerate, and only outside prod.
@@ -120,13 +134,18 @@ func Load() (*Config, error) {
 			RefreshTokenTTL: getDuration("REFRESH_TOKEN_TTL", 720*time.Hour), // 30 days
 		},
 		Market: MarketConfig{
-			Provider:   getString("MARKET_PROVIDER", "fake"),
-			APIKey:     getString("MARKET_API_KEY", ""),
-			RatePerMin: getInt("MARKET_RATE_PER_MIN", 8), // Twelve Data free tier
+			Provider:             getString("MARKET_PROVIDER", "fake"),
+			APIKey:               getString("MARKET_API_KEY", ""),
+			RatePerMin:           getInt("MARKET_RATE_PER_MIN", 8), // Twelve Data free tier
+			RefreshLimit:         getInt("MARKET_REFRESH_LIMIT", 0), // 0 = all symbols
+			FundamentalsProvider: getString("FUNDAMENTALS_PROVIDER", ""),
+			FundamentalsAPIKey:   getString("FUNDAMENTALS_API_KEY", ""),
 		},
 		Engine: EngineConfig{
-			TickInterval:  getDuration("ENGINE_TICK_INTERVAL", 60*time.Second),
-			StrategiesDir: getString("ENGINE_STRATEGIES_DIR", "internal/engine/strategies"),
+			TickInterval:      getDuration("ENGINE_TICK_INTERVAL", 60*time.Second),
+			StrategiesDir:     getString("ENGINE_STRATEGIES_DIR", "internal/engine/strategies"),
+			Sandbox:           getBool("ENGINE_SANDBOX", false),
+			IgnoreMarketHours: getBool("ENGINE_IGNORE_MARKET_HOURS", false),
 		},
 	}
 
@@ -191,6 +210,17 @@ func getInt(key string, def int) int {
 	}
 	if n, err := strconv.Atoi(v); err == nil {
 		return n
+	}
+	return def
+}
+
+func getBool(key string, def bool) bool {
+	v, ok := os.LookupEnv(key)
+	if !ok || v == "" {
+		return def
+	}
+	if b, err := strconv.ParseBool(v); err == nil {
+		return b
 	}
 	return def
 }

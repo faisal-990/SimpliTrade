@@ -92,10 +92,19 @@ func (s *DBPortfolioSource) Load(ctx context.Context, accountID uuid.UUID) (deci
 type DBRefresher struct {
 	provider marketdata.Provider
 	stocks   repository.StockRepo
+	limit    int // 0 = all symbols; >0 caps symbols per refresh (free-tier safety)
 }
 
 func NewDBRefresher(p marketdata.Provider, stocks repository.StockRepo) *DBRefresher {
 	return &DBRefresher{provider: p, stocks: stocks}
+}
+
+// WithLimit caps how many symbols are refreshed per cycle. On a tiny free-tier
+// quota, refreshing the whole universe every tick blows the rate limit; capping
+// keeps each refresh within budget. 0 means refresh everything.
+func (r *DBRefresher) WithLimit(n int) *DBRefresher {
+	r.limit = n
+	return r
 }
 
 func (r *DBRefresher) Refresh(ctx context.Context) error {
@@ -105,6 +114,9 @@ func (r *DBRefresher) Refresh(ctx context.Context) error {
 	}
 	if len(symbols) == 0 {
 		return nil
+	}
+	if r.limit > 0 && len(symbols) > r.limit {
+		symbols = symbols[:r.limit]
 	}
 	quotes, err := r.provider.BatchQuotes(ctx, symbols)
 	if err != nil {
@@ -116,6 +128,27 @@ func (r *DBRefresher) Refresh(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// DBCopySource lists active copy allocations from the database for the engine.
+type DBCopySource struct {
+	allocs repository.AllocationRepo
+}
+
+func NewDBCopySource(allocs repository.AllocationRepo) *DBCopySource {
+	return &DBCopySource{allocs: allocs}
+}
+
+func (s *DBCopySource) ListActiveCopies(ctx context.Context) ([]CopyAllocation, error) {
+	rows, err := s.allocs.ListActive(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]CopyAllocation, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, CopyAllocation{AccountID: r.AccountID, InvestorID: r.InvestorID})
+	}
+	return out, nil
 }
 
 // PerformanceStoreAdapter adapts the PerformanceRepo to the runner's interface.

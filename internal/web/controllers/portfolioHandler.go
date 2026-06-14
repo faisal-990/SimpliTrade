@@ -61,6 +61,16 @@ func (p *PortfolioHandler) HandleGetUsersTradeHistory(c *gin.Context) {
 	httpx.OK(c, items)
 }
 
+// HandleSellAll liquidates all of the caller's holdings at current prices.
+func (p *PortfolioHandler) HandleSellAll(c *gin.Context) {
+	n, err := p.trades.SellAll(c.Request.Context(), middlewares.AccountID(c))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"sold": n})
+}
+
 // HandleGetUsersStockHoldings returns the caller's holdings valued at the
 // current market price.
 func (p *PortfolioHandler) HandleGetUsersStockHoldings(c *gin.Context) {

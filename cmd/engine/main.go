@@ -68,6 +68,7 @@ func main() {
 	// Provider + runner wiring. Config selects fake (default) or a real provider
 	// (e.g. twelvedata) when MARKET_API_KEY is set — see marketdata.NewProvider.
 	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey, cfg.Market.RatePerMin)
+	provider = marketdata.WithFundamentals(provider, cfg.Market.FundamentalsProvider, cfg.Market.FundamentalsAPIKey)
 	r := runner.New(
 		runner.NewDBMarketSource(stockRepo),
 		runner.NewDBPortfolioSource(portfolioRepo),
@@ -75,7 +76,27 @@ func main() {
 		runner.NewPerformanceStore(perfRepo),
 		bots,
 		logger,
-	).WithRefresher(runner.NewDBRefresher(provider, stockRepo))
+	).WithCopies(runner.NewDBCopySource(repository.NewAllocationRepo(db)))
+
+	// Refresher: the real (rate-limited) provider in normal operation, or a
+	// self-contained synthetic ticker in sandbox mode so the daemon can run the
+	// full automated flow without an external feed (demos / closed market).
+	if cfg.Engine.Sandbox {
+		// Demo: synthetic feed, runs anytime (no market-hours gate) so it's
+		// observable on demand.
+		logger.Info("engine: SANDBOX mode — synthetic market ticker, runs 24/7 (no external feed, no market-hours gate)")
+		r = r.WithRefresher(runner.NewSyntheticTicker(stockRepo, 0.03, 1))
+	} else {
+		// Production: real feed, gated to US market hours so it starts itself at
+		// the open and idles overnight/weekends/holidays — no manual trigger.
+		r = r.WithRefresher(runner.NewDBRefresher(provider, stockRepo).WithLimit(cfg.Market.RefreshLimit))
+		if cfg.Engine.IgnoreMarketHours {
+			logger.Info("engine: LIVE mode — real provider, market-hours gate DISABLED (testing off-hours)")
+		} else {
+			logger.Info("engine: LIVE mode — real provider, gated to US market hours (09:30–16:00 ET, weekdays)")
+			r = r.WithClock(runner.NewUSEquityClock())
+		}
+	}
 
 	r.Run(ctx, cfg.Engine.TickInterval)
 }

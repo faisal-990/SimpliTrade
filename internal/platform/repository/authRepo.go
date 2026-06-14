@@ -70,7 +70,7 @@ func (a *authRepo) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User,
 func (a *authRepo) GetAccount(ctx context.Context, userID uuid.UUID, mode models.AccountMode) (*models.Account, error) {
 	var acct models.Account
 	err := a.DB.WithContext(ctx).
-		Where("user_id = ? AND mode = ?", userID, mode).
+		Where("user_id = ? AND mode = ? AND kind = ?", userID, mode, models.KindPrimary).
 		First(&acct).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

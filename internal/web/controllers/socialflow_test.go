@@ -52,6 +52,9 @@ func (f *fakeInvestorRepo) Unfollow(_ context.Context, follower, investor uuid.U
 func (f *fakeInvestorRepo) ListFollowing(_ context.Context, _ uuid.UUID) ([]uuid.UUID, error) {
 	return nil, nil
 }
+func (f *fakeInvestorRepo) ListFollowedInvestors(_ context.Context, _ uuid.UUID) ([]repository.InvestorSummary, error) {
+	return nil, nil
+}
 func (f *fakeInvestorRepo) FeedTrades(_ context.Context, _ uuid.UUID, _ int) ([]models.Trade, error) {
 	return f.feed, nil
 }

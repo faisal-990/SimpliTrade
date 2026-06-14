@@ -34,6 +34,7 @@ func main() {
 	// Provider selection is config-driven (fake by default; twelvedata when a
 	// key is set). The seeder is unchanged regardless of source.
 	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey, cfg.Market.RatePerMin)
+	provider = marketdata.WithFundamentals(provider, cfg.Market.FundamentalsProvider, cfg.Market.FundamentalsAPIKey)
 
 	universe := marketdata.DefaultUniverse
 	if limit := seedLimit(); limit > 0 && limit < len(universe) {
@@ -42,6 +43,9 @@ func main() {
 	}
 
 	seeder := marketdata.NewSeeder(provider, repository.NewStockRepo(db))
+	if d := seedHistoryDays(); d > 0 {
+		seeder.HistoryDays = d // SEED_HISTORY_DAYS overrides the default backfill window
+	}
 	n, err := seeder.Seed(context.Background(), universe)
 	if err != nil {
 		log.Fatalf("❌ seed failed after %d stocks: %v", n, err)
@@ -51,5 +55,10 @@ func main() {
 
 func seedLimit() int {
 	n, _ := strconv.Atoi(os.Getenv("SEED_LIMIT"))
+	return n
+}
+
+func seedHistoryDays() int {
+	n, _ := strconv.Atoi(os.Getenv("SEED_HISTORY_DAYS"))
 	return n
 }

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { UserPlus, UserCheck, ArrowUpRight } from "lucide-react";
+import { UserPlus, UserCheck, ArrowUpRight, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/common/states";
 import { pct, pnlColor } from "@/lib/format";
@@ -45,6 +45,11 @@ export function InvestorCard({ investor, following, busy, onToggleFollow }: Prop
       </div>
 
       <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{investor.bio}</p>
+
+      <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Users className="h-3.5 w-3.5" />
+        {investor.followers.toLocaleString()} {investor.followers === 1 ? "follower" : "followers"}
+      </p>
 
       <div className="mt-4 flex items-center gap-2">
         <Button

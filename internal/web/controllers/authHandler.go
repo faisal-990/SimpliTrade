@@ -115,3 +115,18 @@ func (a *AuthHandler) HandleAuthForMe(c *gin.Context) {
 	}
 	httpx.OK(c, user)
 }
+
+// HandleUpdateMe updates the caller's profile (name + "About me" bio).
+func (a *AuthHandler) HandleUpdateMe(c *gin.Context) {
+	var req dto.UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Fail(c, httpx.Validation("invalid profile update: "+err.Error()))
+		return
+	}
+	user, err := a.service.UpdateProfile(c.Request.Context(), middlewares.UserID(c), req)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, user)
+}

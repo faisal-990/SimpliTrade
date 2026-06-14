@@ -39,6 +39,14 @@ type UserDTO struct {
 	Email         string `json:"email"`
 	Role          string `json:"role"`
 	EmailVerified bool   `json:"email_verified"`
+	AvatarURL     string `json:"avatar_url"`
+	Bio           string `json:"bio"`
+}
+
+// UpdateProfileRequest is the body for PUT /auth/me (edit the "About me" section).
+type UpdateProfileRequest struct {
+	Name string `json:"name" binding:"required,min=2,max=100"`
+	Bio  string `json:"bio" binding:"max=500"`
 }
 
 // AuthResponse is returned by signup, login, and refresh.

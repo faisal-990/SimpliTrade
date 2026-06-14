@@ -40,6 +40,11 @@ type AuthRepo interface {
 	IncrementPasswordResetAttempts(ctx context.Context, id uuid.UUID) error
 	MarkPasswordResetUsed(ctx context.Context, id uuid.UUID, at time.Time) error
 	UpdateUserPassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
+
+	// OAuth identity linking + profile
+	GetUserByOAuth(ctx context.Context, provider, providerUserID string) (*models.User, error)
+	LinkOAuthAccount(ctx context.Context, link *models.OAuthAccount) error
+	UpdateUserProfile(ctx context.Context, userID uuid.UUID, name, bio, avatarURL string) error
 }
 
 type authRepo struct {
@@ -181,4 +186,34 @@ func (a *authRepo) UpdateUserPassword(ctx context.Context, userID uuid.UUID, pas
 		Model(&models.User{}).
 		Where("id = ?", userID).
 		Update("password", passwordHash).Error
+}
+
+func (a *authRepo) GetUserByOAuth(ctx context.Context, provider, providerUserID string) (*models.User, error) {
+	var link models.OAuthAccount
+	err := a.DB.WithContext(ctx).
+		Where("provider = ? AND provider_user_id = ?", provider, providerUserID).
+		First(&link).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		utils.LogError("repo: get oauth account", err)
+		return nil, err
+	}
+	return a.GetUserByID(ctx, link.UserID)
+}
+
+func (a *authRepo) LinkOAuthAccount(ctx context.Context, link *models.OAuthAccount) error {
+	return a.DB.WithContext(ctx).Create(link).Error
+}
+
+func (a *authRepo) UpdateUserProfile(ctx context.Context, userID uuid.UUID, name, bio, avatarURL string) error {
+	updates := map[string]any{"name": name, "bio": bio}
+	if avatarURL != "" {
+		updates["avatar_url"] = avatarURL
+	}
+	return a.DB.WithContext(ctx).
+		Model(&models.User{}).
+		Where("id = ?", userID).
+		Updates(updates).Error
 }

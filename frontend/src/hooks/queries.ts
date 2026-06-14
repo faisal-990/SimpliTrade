@@ -12,6 +12,7 @@ import type {
   StockSummary,
   TradeHistoryItem,
   TradeResponse,
+  User,
 } from "@/types/api";
 
 // Centralized query keys — single source of truth for caching/invalidation.
@@ -42,7 +43,7 @@ export const useStock = (symbol: string) =>
 // don't refetch more often than that (and a real, rate-limited provider behind
 // the endpoint stays within budget). Today the endpoint serves an embedded seed,
 // so headlines won't change until a live news source is wired in server-side.
-const NEWS_REFRESH_MS = 10 * 60 * 1000;
+const NEWS_REFRESH_MS = 30 * 60 * 1000;
 export const useNews = () =>
   useQuery({
     queryKey: qk.news,
@@ -103,6 +104,13 @@ export function useTrade(side: "buy" | "sell") {
   });
 }
 
+// --- profile ---
+export function useUpdateProfile() {
+  return useMutation({
+    mutationFn: (input: { name: string; bio: string }) => api.put<User>("/auth/me", input),
+  });
+}
+
 // --- password reset (public, OTP via email) ---
 export function useForgotPassword() {
   return useMutation({
@@ -146,9 +154,11 @@ export function useSellAll() {
   });
 }
 
-function invalidateSocial(qc: ReturnType<typeof useQueryClient>) {
+function invalidateSocial(qc: ReturnType<typeof useQueryClient>, investorId?: string) {
   qc.invalidateQueries({ queryKey: qk.following });
   qc.invalidateQueries({ queryKey: qk.feed });
+  qc.invalidateQueries({ queryKey: qk.leaderboard }); // follower counts
+  if (investorId) qc.invalidateQueries({ queryKey: qk.investor(investorId) });
 }
 
 // --- copy-trading allocations ---
@@ -191,7 +201,7 @@ export function useFollow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.post(`/investor/${id}/follow`),
-    onSuccess: () => invalidateSocial(qc),
+    onSuccess: (_data, id) => invalidateSocial(qc, id),
   });
 }
 
@@ -199,6 +209,6 @@ export function useUnfollow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.del(`/investor/${id}/follow`),
-    onSuccess: () => invalidateSocial(qc),
+    onSuccess: (_data, id) => invalidateSocial(qc, id),
   });
 }

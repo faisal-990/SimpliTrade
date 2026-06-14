@@ -24,6 +24,11 @@ interface AuthValue {
   login: (email: string, password: string) => Promise<AuthResponse>;
   signup: (name: string, email: string, password: string) => Promise<AuthResponse>;
   logout: () => Promise<void>;
+  // completeOAuth ingests a refresh token from an OAuth callback and exchanges it
+  // for a live session (access token + profile).
+  completeOAuth: (refreshToken: string) => Promise<void>;
+  // setUser replaces the cached profile (e.g. after editing the About-me section).
+  setUser: (user: User) => void;
 }
 
 export const AuthContext = createContext<AuthValue | null>(null);
@@ -129,9 +134,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [clearSession]);
 
+  const completeOAuth = useCallback(
+    async (rt: string) => {
+      refreshToken.current = rt;
+      storeRefresh(rt);
+      const token = await refresh(); // exchanges the token, applies the session
+      if (!token) throw new Error("Could not complete sign-in");
+    },
+    [refresh]
+  );
+
   const value = useMemo<AuthValue>(
-    () => ({ user, ready, isAuthenticated: !!user, login, signup, logout }),
-    [user, ready, login, signup, logout]
+    () => ({ user, ready, isAuthenticated: !!user, login, signup, logout, completeOAuth, setUser }),
+    [user, ready, login, signup, logout, completeOAuth]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

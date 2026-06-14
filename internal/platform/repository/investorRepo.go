@@ -17,8 +17,9 @@ type InvestorSummary struct {
 	Name     string    `gorm:"column:name"`
 	Bio      string    `gorm:"column:bio"`
 	Strategy string    `gorm:"column:strategy"`
-	ROI      float64   `gorm:"column:roi"`
-	Rank     int       `gorm:"column:rank"`
+	ROI       float64 `gorm:"column:roi"`
+	Rank      int     `gorm:"column:rank"`
+	Followers int     `gorm:"column:followers"`
 }
 
 // InvestorRepo reads the bot investors, their trades, and the follow graph.
@@ -49,7 +50,8 @@ func NewInvestorRepo(db *gorm.DB) InvestorRepo {
 const investorSelect = `investors.id AS id, users.name AS name, investors.bio AS bio,
 	investors.strategy AS strategy,
 	COALESCE(performances.roi, 0) AS roi,
-	COALESCE(performances.rank, 1000000) AS rank`
+	COALESCE(performances.rank, 1000000) AS rank,
+	(SELECT COUNT(*) FROM follows WHERE follows.investor_id = investors.id) AS followers`
 
 func (r *investorRepo) baseQuery(ctx context.Context) *gorm.DB {
 	return r.DB.WithContext(ctx).

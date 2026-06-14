@@ -63,6 +63,9 @@ export default function InvestorDetail() {
                   {inv.rank > 0 && inv.rank < 1_000_000 && (
                     <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Rank #{inv.rank}</span>
                   )}
+                  <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {inv.followers.toLocaleString()} {inv.followers === 1 ? "follower" : "followers"}
+                  </span>
                 </div>
               </div>
             </div>

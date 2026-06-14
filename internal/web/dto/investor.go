@@ -2,12 +2,13 @@ package dto
 
 // InvestorDTO is a bot investor as shown on the leaderboard and profile.
 type InvestorDTO struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Bio      string  `json:"bio"`
-	Strategy string  `json:"strategy"`
-	ROI      float64 `json:"roi"`
-	Rank     int     `json:"rank"`
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Bio       string  `json:"bio"`
+	Strategy  string  `json:"strategy"`
+	ROI       float64 `json:"roi"`
+	Rank      int     `json:"rank"`
+	Followers int     `json:"followers"`
 }
 
 // FeedItem is one trade in the aggregated feed of followed investors, annotated

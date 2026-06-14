@@ -7,6 +7,12 @@
 
 const BASE = "/api";
 
+// Absolute backend origin — used for top-level navigations like OAuth sign-in,
+// which must hit the backend directly (not the Vite proxy) so the CSRF state
+// cookie is first-party to the server across the redirect round-trip. Fetch calls
+// keep using the relative BASE (proxied, CORS-free).
+export const API_ORIGIN = import.meta.env.VITE_API_ORIGIN ?? "http://localhost:8080";
+
 /** ApiError carries the backend's machine code + human message + HTTP status. */
 export class ApiError extends Error {
   status: number;

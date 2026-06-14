@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/common/states";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { useAuth } from "@/auth/useAuth";
 import { ApiError } from "@/lib/api";
 
@@ -107,6 +108,11 @@ export default function Login() {
               {formError}
             </div>
           )}
+
+          <GoogleButton />
+          <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" /> or with email <span className="h-px flex-1 bg-border" />
+          </div>
 
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="space-y-2">

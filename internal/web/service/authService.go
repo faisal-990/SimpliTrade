@@ -31,6 +31,7 @@ type AuthService interface {
 	Refresh(ctx context.Context, refreshToken string) (*dto.AuthResponse, error)
 	Logout(ctx context.Context, refreshToken string) error
 	Me(ctx context.Context, userID string) (*dto.UserDTO, error)
+	UpdateProfile(ctx context.Context, userID string, req dto.UpdateProfileRequest) (*dto.UserDTO, error)
 	// ForgotPassword emails a one-time code to the address if an active account
 	// exists. It never reveals whether the email is registered (no enumeration).
 	ForgotPassword(ctx context.Context, email string) error
@@ -268,18 +269,42 @@ func (a *authservice) Me(ctx context.Context, userID string) (*dto.UserDTO, erro
 	return &d, nil
 }
 
+func (a *authservice) UpdateProfile(ctx context.Context, userID string, req dto.UpdateProfileRequest) (*dto.UserDTO, error) {
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, httpx.Unauthorized("invalid user identity")
+	}
+	if err := a.repo.UpdateUserProfile(ctx, id, req.Name, req.Bio, ""); err != nil {
+		return nil, httpx.Internal("could not update profile").WithCause(err)
+	}
+	user, err := a.repo.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, httpx.Internal("could not load profile").WithCause(err)
+	}
+	d := toUserDTO(user)
+	return &d, nil
+}
+
 // issueTokens mints an access token + a rotating refresh token, persists the
 // refresh token's hash, and assembles the auth response.
 func (a *authservice) issueTokens(ctx context.Context, user *models.User, acct *models.Account) (*dto.AuthResponse, error) {
-	access, expiresAt, err := a.tokens.GenerateAccessToken(user.ID.String(), acct.ID.String(), user.Role)
+	return issueSession(ctx, a.repo, a.tokens, user, acct)
+}
+
+// issueSession is the shared token-minting path used by password login and OAuth
+// login alike: an access token plus a rotating refresh token whose hash is
+// persisted. Keeping it package-level lets every auth entry point issue
+// identical sessions without duplicating the logic.
+func issueSession(ctx context.Context, repo repository.AuthRepo, tokens *auth.TokenManager, user *models.User, acct *models.Account) (*dto.AuthResponse, error) {
+	access, expiresAt, err := tokens.GenerateAccessToken(user.ID.String(), acct.ID.String(), user.Role)
 	if err != nil {
 		return nil, httpx.Internal("could not issue access token").WithCause(err)
 	}
-	refresh, err := a.tokens.GenerateRefreshToken()
+	refresh, err := tokens.GenerateRefreshToken()
 	if err != nil {
 		return nil, httpx.Internal("could not issue refresh token").WithCause(err)
 	}
-	if err := a.repo.SaveRefreshToken(ctx, &models.RefreshToken{
+	if err := repo.SaveRefreshToken(ctx, &models.RefreshToken{
 		UserID:    user.ID,
 		TokenHash: refresh.Hash,
 		ExpiresAt: refresh.ExpiresAt,
@@ -302,5 +327,7 @@ func toUserDTO(u *models.User) dto.UserDTO {
 		Email:         u.Email,
 		Role:          u.Role,
 		EmailVerified: u.EmailVerified,
+		AvatarURL:     u.AvatarURL,
+		Bio:           u.Bio,
 	}
 }

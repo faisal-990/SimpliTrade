@@ -54,6 +54,7 @@ func (f *fakeHistoryRepo) ExecuteSell(context.Context, uuid.UUID, string, float6
 func (f *fakeHistoryRepo) ListByAccount(context.Context, uuid.UUID, int, int) ([]models.Trade, error) {
 	return f.trades, nil
 }
+func (f *fakeHistoryRepo) SellAll(context.Context, uuid.UUID) (int, error) { return 0, nil }
 
 func newTradeRouter(b broker.Broker, repo repository.TradeRepo) (*gin.Engine, string) {
 	gin.SetMode(gin.TestMode)

@@ -67,6 +67,16 @@ func (i *InvestorHandler) HandleUnfollowInvestor(c *gin.Context) {
 	httpx.OK(c, gin.H{"following": false})
 }
 
+// HandleGetFollowing returns the investors the caller follows.
+func (i *InvestorHandler) HandleGetFollowing(c *gin.Context) {
+	investors, err := i.service.Following(c.Request.Context(), middlewares.UserID(c))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, investors)
+}
+
 // HandleGetFeed returns the aggregated trade feed of the investors the caller
 // follows.
 func (i *InvestorHandler) HandleGetFeed(c *gin.Context) {

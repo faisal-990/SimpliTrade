@@ -37,3 +37,20 @@ func NewProvider(name, apiKey string, ratePerMin int) Provider {
 		return NewFakeProvider()
 	}
 }
+
+// WithFundamentals layers a dedicated fundamentals source over a price provider
+// when the price feed doesn't supply fundamentals (e.g. Twelve Data's free tier).
+// It returns base unchanged when no fundamentals provider/key is configured, so
+// it's safe to call unconditionally. Fundamentals are cached aggressively (they
+// move slowly) to stay within the source's free-tier budget.
+func WithFundamentals(base Provider, name, apiKey string) Provider {
+	if apiKey == "" {
+		return base
+	}
+	switch name {
+	case "finnhub":
+		return NewCompositeProvider(base, NewFinnhubProvider(apiKey))
+	default:
+		return base
+	}
+}

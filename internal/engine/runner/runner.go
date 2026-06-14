@@ -48,6 +48,17 @@ type Refresher interface {
 	Refresh(ctx context.Context) error
 }
 
+// CopyAllocation is a user's capped sub-account that mirrors an investor.
+type CopyAllocation struct {
+	AccountID  uuid.UUID
+	InvestorID uuid.UUID
+}
+
+// CopySource lists the active copy allocations to trade each cycle. Optional.
+type CopySource interface {
+	ListActiveCopies(ctx context.Context) ([]CopyAllocation, error)
+}
+
 // Runner ties the pieces together for a set of bots.
 type Runner struct {
 	market  MarketSource
@@ -56,12 +67,29 @@ type Runner struct {
 	perf    PerformanceStore
 	bots    []Bot
 	log     *slog.Logger
-	refresh Refresher // optional
+	refresh Refresher   // optional
+	copies  CopySource  // optional
+	clock   MarketClock // optional: when set, cycles run only during market hours
+	wasOpen bool        // tracks open→closed transitions for the end-of-day log
 }
 
 // WithRefresher sets an optional market refresher run at the start of each cycle.
 func (r *Runner) WithRefresher(ref Refresher) *Runner {
 	r.refresh = ref
+	return r
+}
+
+// WithCopies sets an optional source of user copy-allocations to trade each cycle.
+func (r *Runner) WithCopies(src CopySource) *Runner {
+	r.copies = src
+	return r
+}
+
+// WithClock gates Run to the market session: cycles execute only when the clock
+// reports the market open. Run starts immediately at the open and idles
+// otherwise — production scheduling with no manual trigger.
+func (r *Runner) WithClock(c MarketClock) *Runner {
+	r.clock = c
 	return r
 }
 
@@ -93,15 +121,17 @@ func (r *Runner) RunOnce(ctx context.Context) error {
 
 	type score struct {
 		investorID uuid.UUID
+		name       string
 		roi        float64
 	}
 	scores := make([]score, 0, len(r.bots))
+	botOrders := 0
 
 	for _, bot := range r.bots {
 		if !bot.Config.Identity.Enabled {
 			continue
 		}
-		r.tradeBot(ctx, bot, snapshot)
+		botOrders += r.tradeBot(ctx, bot, snapshot)
 
 		// Revalue after trading to score the bot for the leaderboard.
 		pf, err := r.pf.Load(ctx, bot.AccountID)
@@ -109,27 +139,80 @@ func (r *Runner) RunOnce(ctx context.Context) error {
 			r.log.Error("engine: reload portfolio", "investor", bot.Config.Identity.ID, "err", err)
 			continue
 		}
-		scores = append(scores, score{bot.InvestorID, roiOf(pf, prices)})
+		scores = append(scores, score{bot.InvestorID, bot.Config.Identity.Name, roiOf(pf, prices)})
 	}
 
-	// Rank by ROI (highest first) and persist.
-	sort.SliceStable(scores, func(i, j int) bool { return scores[i].roi > scores[j].roi })
+	// Rank by ROI (highest first), tie-break by investor id for stable order.
+	sort.SliceStable(scores, func(i, j int) bool {
+		if scores[i].roi != scores[j].roi {
+			return scores[i].roi > scores[j].roi
+		}
+		return scores[i].investorID.String() < scores[j].investorID.String()
+	})
 	for rank, s := range scores {
 		if err := r.perf.SavePerformance(ctx, s.investorID, s.roi, rank+1); err != nil {
 			r.log.Error("engine: save performance", "investor", s.investorID, "err", err)
 		}
 	}
+
+	// Trade users' capped copy allocations using the mirrored investor's strategy.
+	// These are not ranked — they belong to users, not the leaderboard.
+	copyOrders := r.tradeCopies(ctx, snapshot)
+
+	// Per-cycle summary: a compact digest of what the engine just did.
+	if len(scores) > 0 {
+		leader := scores[0]
+		r.log.Info("engine: cycle complete",
+			"bot_orders", botOrders,
+			"copy_orders", copyOrders,
+			"bots_ranked", len(scores),
+			"leader", leader.name,
+			"leader_roi", leader.roi,
+		)
+	}
 	return nil
 }
 
-// tradeBot loads the bot's portfolio, decides, and executes the resulting intents.
-func (r *Runner) tradeBot(ctx context.Context, bot Bot, snapshot []decide.StockView) {
+// tradeCopies runs each active copy allocation through its mirrored investor's
+// strategy, trading the capped sub-account. Returns the number of executed orders.
+func (r *Runner) tradeCopies(ctx context.Context, snapshot []decide.StockView) int {
+	if r.copies == nil {
+		return 0
+	}
+	allocs, err := r.copies.ListActiveCopies(ctx)
+	if err != nil {
+		r.log.Error("engine: list copy allocations", "err", err)
+		return 0
+	}
+	if len(allocs) == 0 {
+		return 0
+	}
+	// Index strategy configs by the investor they belong to.
+	cfgByInvestor := make(map[uuid.UUID]strategy.Config, len(r.bots))
+	for _, b := range r.bots {
+		cfgByInvestor[b.InvestorID] = b.Config
+	}
+	executed := 0
+	for _, a := range allocs {
+		cfg, ok := cfgByInvestor[a.InvestorID]
+		if !ok {
+			continue
+		}
+		executed += r.tradeBot(ctx, Bot{InvestorID: a.InvestorID, AccountID: a.AccountID, Config: cfg}, snapshot)
+	}
+	return executed
+}
+
+// tradeBot loads the bot's portfolio, decides, and executes the resulting
+// intents. Returns the number of orders that filled.
+func (r *Runner) tradeBot(ctx context.Context, bot Bot, snapshot []decide.StockView) int {
 	pf, err := r.pf.Load(ctx, bot.AccountID)
 	if err != nil {
 		r.log.Error("engine: load portfolio", "investor", bot.Config.Identity.ID, "err", err)
-		return
+		return 0
 	}
 	intents := dedupe(decide.Decide(bot.Config, snapshot, pf))
+	executed := 0
 	for _, in := range intents {
 		order := broker.Order{
 			AccountID: bot.AccountID,
@@ -141,8 +224,11 @@ func (r *Runner) tradeBot(ctx context.Context, bot Bot, snapshot []decide.StockV
 			// Insufficient funds / shares are normal outcomes, not failures.
 			r.log.Debug("engine: order skipped", "investor", bot.Config.Identity.ID,
 				"symbol", in.Symbol, "action", in.Action, "err", err)
+			continue
 		}
+		executed++
 	}
+	return executed
 }
 
 // dedupe ensures at most one intent per symbol; a SELL wins over a BUY for the

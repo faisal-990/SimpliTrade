@@ -33,6 +33,7 @@ func (f *fakeTradeRepo) ExecuteSell(_ context.Context, acct uuid.UUID, symbol st
 func (f *fakeTradeRepo) ListByAccount(_ context.Context, _ uuid.UUID, _, _ int) ([]models.Trade, error) {
 	return nil, nil
 }
+func (f *fakeTradeRepo) SellAll(_ context.Context, _ uuid.UUID) (int, error) { return 0, nil }
 
 func TestSimulatedBroker_BuyMapsToFill(t *testing.T) {
 	id := uuid.New()

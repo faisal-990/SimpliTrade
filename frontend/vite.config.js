@@ -10,4 +10,11 @@ export default defineConfig({
             "@": path.resolve(__dirname, "./src"),
         },
     },
+    server: {
+        // Proxy API calls to the Go server in dev so the SPA uses same-origin
+        // "/api/..." paths (no CORS, no hardcoded host).
+        proxy: {
+            "/api": { target: "http://localhost:8080", changeOrigin: true },
+        },
+    },
 });

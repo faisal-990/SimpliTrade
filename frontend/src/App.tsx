@@ -1,0 +1,38 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import { RequireAuth } from "@/components/RequireAuth";
+import { AppLayout } from "@/components/layout/AppLayout";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import Dashboard from "@/pages/Dashboard";
+import StockDetail from "@/pages/StockDetail";
+import Portfolio from "@/pages/Portfolio";
+import Investors from "@/pages/Investors";
+import InvestorDetail from "@/pages/InvestorDetail";
+import Feed from "@/pages/Feed";
+
+export default function App() {
+  return (
+    <Routes>
+      {/* public */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+
+      {/* authenticated app */}
+      <Route element={<RequireAuth />}>
+        <Route path="/app" element={<AppLayout />}>
+          <Route index element={<Navigate to="/app/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="stock/:symbol" element={<StockDetail />} />
+          <Route path="portfolio" element={<Portfolio />} />
+          <Route path="investors" element={<Investors />} />
+          <Route path="investors/:id" element={<InvestorDetail />} />
+          <Route path="feed" element={<Feed />} />
+        </Route>
+      </Route>
+
+      {/* fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+}

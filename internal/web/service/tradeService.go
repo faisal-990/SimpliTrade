@@ -19,6 +19,7 @@ type TradeService interface {
 	Buy(ctx context.Context, accountID string, req dto.TradeRequest) (*dto.TradeResponse, error)
 	Sell(ctx context.Context, accountID string, req dto.TradeRequest) (*dto.TradeResponse, error)
 	History(ctx context.Context, accountID string, limit, offset int) ([]dto.TradeHistoryItem, error)
+	SellAll(ctx context.Context, accountID string) (int, error)
 }
 
 type tradeService struct {
@@ -93,6 +94,18 @@ func (s *tradeService) History(ctx context.Context, accountID string, limit, off
 		})
 	}
 	return items, nil
+}
+
+func (s *tradeService) SellAll(ctx context.Context, accountID string) (int, error) {
+	acct, err := uuid.Parse(accountID)
+	if err != nil {
+		return 0, httpx.Unauthorized("invalid account identity")
+	}
+	n, err := s.trades.SellAll(ctx, acct)
+	if err != nil {
+		return 0, httpx.Internal("could not liquidate holdings").WithCause(err)
+	}
+	return n, nil
 }
 
 // mapTradeError translates domain/repository errors into client-facing errors.

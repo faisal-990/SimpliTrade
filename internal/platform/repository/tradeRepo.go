@@ -20,6 +20,8 @@ type TradeRepo interface {
 	ExecuteBuy(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string) (*models.Trade, error)
 	ExecuteSell(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string) (*models.Trade, error)
 	ListByAccount(ctx context.Context, accountID uuid.UUID, limit, offset int) ([]models.Trade, error)
+	// SellAll liquidates every holding in the account at the current price.
+	SellAll(ctx context.Context, accountID uuid.UUID) (int, error)
 }
 
 type tradeRepo struct {
@@ -157,6 +159,39 @@ func (r *tradeRepo) execute(ctx context.Context, side tradeSide, accountID uuid.
 		return nil, err
 	}
 	return result, nil
+}
+
+func (r *tradeRepo) SellAll(ctx context.Context, accountID uuid.UUID) (int, error) {
+	var sold int
+	err := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var account models.Account
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&account, "id = ?", accountID).Error; err != nil {
+			return err
+		}
+		var holdings []models.Holding
+		if err := tx.Preload("Stock").Where("account_id = ?", accountID).Find(&holdings).Error; err != nil {
+			return err
+		}
+		balance := account.Balance
+		for _, h := range holdings {
+			price := h.Stock.CurrentPrice
+			proceeds := price * h.Quantity
+			balance += proceeds
+			if err := tx.Create(&models.Trade{
+				AccountID: accountID, StockID: h.StockID, Type: "sell",
+				Quantity: h.Quantity, Price: price, TotalValue: proceeds,
+				ExecutedAt: time.Now(), Status: "executed",
+			}).Error; err != nil {
+				return err
+			}
+			sold++
+		}
+		if err := tx.Where("account_id = ?", accountID).Delete(&models.Holding{}).Error; err != nil {
+			return err
+		}
+		return tx.Model(&account).Update("balance", balance).Error
+	})
+	return sold, err
 }
 
 func (r *tradeRepo) ListByAccount(ctx context.Context, accountID uuid.UUID, limit, offset int) ([]models.Trade, error) {

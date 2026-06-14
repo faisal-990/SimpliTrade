@@ -38,18 +38,33 @@ type User struct {
 // toggle: the trade service selects a Broker implementation from Account.Mode,
 // so flipping a user to live trading is a data change, not a code change.
 type Account struct {
-	ID        uuid.UUID   `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	UserID    uuid.UUID   `gorm:"type:uuid;not null;uniqueIndex:idx_user_mode"`
-	User      User        `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
-	Mode      AccountMode `gorm:"type:varchar(4);not null;default:'sim';uniqueIndex:idx_user_mode"` // one account per mode per user
-	Currency  string      `gorm:"type:varchar(3);not null;default:'USD'"`
-	Balance   float64     `gorm:"type:numeric(18,4);not null;default:100000"` // cash available to trade
-	IsActive  bool        `gorm:"not null;default:true"`
-	Holdings  []Holding   `gorm:"foreignKey:AccountID"`
-	Trades    []Trade     `gorm:"foreignKey:AccountID"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID     uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID uuid.UUID `gorm:"type:uuid;not null;index"`
+	User   User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
+	// Kind distinguishes a user's single primary wallet from the capped copy
+	// sub-accounts they open to mirror an investor. One primary, many copies.
+	Kind     AccountKind `gorm:"type:varchar(10);not null;default:'primary';index"`
+	Mode     AccountMode `gorm:"type:varchar(4);not null;default:'sim'"`
+	Currency string      `gorm:"type:varchar(3);not null;default:'USD'"`
+	Balance  float64     `gorm:"type:numeric(18,4);not null;default:100000"` // cash available to trade
+	// For copy accounts: which investor this account mirrors, and the capital
+	// cap funded from the primary account.
+	InvestorID *uuid.UUID `gorm:"type:uuid;index"`
+	Capital    float64    `gorm:"type:numeric(18,4);not null;default:0"`
+	IsActive   bool       `gorm:"not null;default:true"`
+	Holdings   []Holding  `gorm:"foreignKey:AccountID"`
+	Trades     []Trade    `gorm:"foreignKey:AccountID"`
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
+
+// AccountKind separates a user's primary wallet from copy sub-accounts.
+type AccountKind string
+
+const (
+	KindPrimary AccountKind = "primary"
+	KindCopy    AccountKind = "copy"
+)
 
 // AccountMode enumerates the money mode of an Account.
 type AccountMode string

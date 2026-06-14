@@ -30,6 +30,8 @@ type InvestorRepo interface {
 	Follow(ctx context.Context, followerID, investorID uuid.UUID) error
 	Unfollow(ctx context.Context, followerID, investorID uuid.UUID) error
 	ListFollowing(ctx context.Context, followerID uuid.UUID) ([]uuid.UUID, error)
+	// ListFollowedInvestors returns the full investor summaries the user follows.
+	ListFollowedInvestors(ctx context.Context, followerID uuid.UUID) ([]InvestorSummary, error)
 	FeedTrades(ctx context.Context, followerID uuid.UUID, limit int) ([]models.Trade, error)
 }
 
@@ -129,15 +131,65 @@ func (r *investorRepo) ListFollowing(ctx context.Context, followerID uuid.UUID) 
 	return ids, nil
 }
 
+func (r *investorRepo) ListFollowedInvestors(ctx context.Context, followerID uuid.UUID) ([]InvestorSummary, error) {
+	var out []InvestorSummary
+	err := r.baseQuery(ctx).
+		Joins("JOIN follows ON follows.investor_id = investors.id").
+		Where("follows.follower_id = ?", followerID).
+		Order("rank ASC").
+		Scan(&out).Error
+	if err != nil {
+		utils.LogError("repo: list followed investors", err)
+		return nil, err
+	}
+	return out, nil
+}
+
+// FeedTrades returns the recent trades of every investor the user has engaged
+// with — those they follow OR have an active copy allocation to. It is scoped to
+// the bot investors' own ("primary") track-record accounts, so the user's own
+// trades and copy sub-account trades never leak into this feed. This keeps the
+// activity log signal-only: just the investors the user actually picked.
 func (r *investorRepo) FeedTrades(ctx context.Context, followerID uuid.UUID, limit int) ([]models.Trade, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
+
+	// Investor ids the user follows.
+	var followed []uuid.UUID
+	if err := r.DB.WithContext(ctx).Model(&models.Follow{}).
+		Where("follower_id = ?", followerID).
+		Pluck("investor_id", &followed).Error; err != nil {
+		utils.LogError("repo: feed followed", err)
+		return nil, err
+	}
+	// Investor ids the user has an active copy allocation to.
+	var allocated []uuid.UUID
+	if err := r.DB.WithContext(ctx).Model(&models.Account{}).
+		Where("user_id = ? AND kind = ? AND is_active = ? AND investor_id IS NOT NULL", followerID, models.KindCopy, true).
+		Distinct().Pluck("investor_id", &allocated).Error; err != nil {
+		utils.LogError("repo: feed allocated", err)
+		return nil, err
+	}
+
+	// Union the two sets.
+	seen := make(map[uuid.UUID]struct{}, len(followed)+len(allocated))
+	investorIDs := make([]uuid.UUID, 0, len(followed)+len(allocated))
+	for _, id := range append(followed, allocated...) {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		investorIDs = append(investorIDs, id)
+	}
+	if len(investorIDs) == 0 {
+		return []models.Trade{}, nil
+	}
+
 	var trades []models.Trade
 	err := r.DB.WithContext(ctx).
 		Joins("JOIN accounts ON accounts.id = trades.account_id").
-		Joins("JOIN follows ON follows.investor_id = accounts.user_id").
-		Where("follows.follower_id = ? AND accounts.mode = ?", followerID, models.ModeSim).
+		Where("accounts.kind = ? AND accounts.mode = ? AND accounts.user_id IN ?", models.KindPrimary, models.ModeSim, investorIDs).
 		Preload("Stock").
 		Preload("Account.User").
 		Order("trades.executed_at DESC").

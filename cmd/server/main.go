@@ -47,9 +47,9 @@ func main() {
 	// News
 	newsservice := service.NewNewsService()
 
-	// dashboard
-	dashboardrepo := repository.NewDashboardRepo(db)
-	dashboardservice := service.NewDashboardService(dashboardrepo)
+	// dashboard (read view over the stock universe the engine maintains)
+	stockrepo := repository.NewStockRepo(db)
+	dashboardservice := service.NewDashboardService(stockrepo)
 	dashboardhandler := controllers.NewDashboardHandler(dashboardservice, newsservice)
 
 	// investor

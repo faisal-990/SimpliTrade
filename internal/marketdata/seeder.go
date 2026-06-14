@@ -61,6 +61,7 @@ func (s *Seeder) seedOne(ctx context.Context, sec Security) error {
 		Name:         sec.Name,
 		Exchange:     sec.Exchange,
 		Sector:       sec.Sector,
+		AssetClass:   AssetClassOf(sec.Symbol),
 		CurrentPrice: quote.Price,
 		Currency:     "USD",
 		Fundamentals: fundamentals,

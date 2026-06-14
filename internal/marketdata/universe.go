@@ -121,6 +121,32 @@ var DefaultUniverse = []Security{
 	{"FCX", "Freeport-McMoRan", "Materials", "NYSE"},
 	{"NEM", "Newmont Corporation", "Materials", "NYSE"},
 	{"NUE", "Nucor Corporation", "Materials", "NYSE"},
+
+	// Asset-class ETF proxies — used by macro/allocation strategies (Dalio) to
+	// target bonds/gold/commodities/broad-equity. AssetClassOf classifies these.
+	{"SPY", "SPDR S&P 500 ETF", "ETF", "NYSE"},
+	{"VTI", "Vanguard Total Stock Market ETF", "ETF", "NYSE"},
+	{"BND", "Vanguard Total Bond Market ETF", "ETF", "NASDAQ"},
+	{"TLT", "iShares 20+ Year Treasury Bond ETF", "ETF", "NASDAQ"},
+	{"GLD", "SPDR Gold Shares", "ETF", "NYSE"},
+	{"DBC", "Invesco DB Commodity Index ETF", "ETF", "NYSE"},
+}
+
+// proxyAssetClass classifies the ETF proxies by asset class. Everything not
+// listed is treated as equity.
+var proxyAssetClass = map[string]string{
+	"SPY": "equity", "VTI": "equity",
+	"BND": "bond", "TLT": "bond",
+	"GLD": "gold",
+	"DBC": "commodity",
+}
+
+// AssetClassOf returns the asset class for a symbol ("equity" by default).
+func AssetClassOf(symbol string) string {
+	if c, ok := proxyAssetClass[symbol]; ok {
+		return c
+	}
+	return "equity"
 }
 
 // Symbols returns just the ticker symbols of the universe.

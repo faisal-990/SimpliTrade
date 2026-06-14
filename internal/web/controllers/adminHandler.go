@@ -11,19 +11,21 @@ import (
 // AdminHandler exposes dev/admin controls: trigger a market cycle on demand and
 // reset the caller's own portfolio.
 type AdminHandler struct {
-	engine *runner.Runner
-	reset  repository.ResetRepo
+	// buildEngine rebuilds the runner per call so investors created at runtime
+	// (e.g. a just-authored custom investor) are always part of the cycle.
+	buildEngine func() *runner.Runner
+	reset       repository.ResetRepo
 }
 
-func NewAdminHandler(engine *runner.Runner, reset repository.ResetRepo) *AdminHandler {
-	return &AdminHandler{engine: engine, reset: reset}
+func NewAdminHandler(buildEngine func() *runner.Runner, reset repository.ResetRepo) *AdminHandler {
+	return &AdminHandler{buildEngine: buildEngine, reset: reset}
 }
 
 // HandleSimulate runs one engine cycle: every bot decides + trades, every user
 // copy-allocation trades, and the leaderboard is recomputed — so you can watch
 // strategies act immediately instead of waiting for the scheduled tick.
 func (h *AdminHandler) HandleSimulate(c *gin.Context) {
-	if err := h.engine.RunOnce(c.Request.Context()); err != nil {
+	if err := h.buildEngine().RunOnce(c.Request.Context()); err != nil {
 		httpx.Fail(c, httpx.Internal("market simulation failed").WithCause(err))
 		return
 	}

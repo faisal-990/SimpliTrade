@@ -63,6 +63,12 @@ func main() {
 		}
 		bots = append(bots, runner.Bot{InvestorID: investorID, AccountID: accountID, Config: c})
 	}
+	// User-authored investors trade alongside the presets.
+	if customBots, err := runner.CustomBots(ctx, repository.NewCustomStrategyRepo(db)); err != nil {
+		logger.Error("engine: load custom investors", "err", err)
+	} else {
+		bots = append(bots, customBots...)
+	}
 	logger.Info("engine: bots provisioned", "count", len(bots))
 
 	// Provider + runner wiring. Config selects fake (default) or a real provider

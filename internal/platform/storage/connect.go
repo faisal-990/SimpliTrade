@@ -23,6 +23,7 @@ func Models() []any {
 		&models.PasswordReset{},
 		&models.OAuthAccount{},
 		&models.Investor{},
+		&models.CustomStrategy{},
 		&models.Performance{},
 		&models.Stock{},
 		&models.StockPrice{},

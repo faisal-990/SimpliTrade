@@ -32,7 +32,7 @@ export default function Dashboard() {
 
       <div className="grid gap-7 lg:grid-cols-[1.6fr_1fr]">
         {/* Stock universe */}
-        <section>
+        <section className="min-w-0">
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Stocks</h2>
           {stocks.isLoading ? (
             <Loading />
@@ -50,7 +50,7 @@ export default function Dashboard() {
         </section>
 
         {/* News */}
-        <section>
+        <section className="min-w-0">
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Market news</h2>
           {news.isLoading ? (
             <Loading />
@@ -62,12 +62,12 @@ export default function Dashboard() {
             <ul className="divide-y rounded-xl border bg-card">
               {news.data.slice(0, 5).map((n, i) => (
                 <li key={i}>
-                  <a href={n.url} target="_blank" rel="noreferrer" className="group flex items-center justify-between gap-2 px-3 py-2.5">
+                  <a href={n.url} target="_blank" rel="noreferrer" className="group flex items-start justify-between gap-2 px-3 py-2.5">
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium leading-snug group-hover:text-primary">{n.title}</p>
-                      <p className="text-[11px] text-muted-foreground">{n.source}</p>
+                      <p className="line-clamp-2 text-[13px] font-medium leading-snug group-hover:text-primary">{n.title}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{n.source}</p>
                     </div>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
+                    <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
                   </a>
                 </li>
               ))}

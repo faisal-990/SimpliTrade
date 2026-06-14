@@ -104,6 +104,42 @@ export function useTrade(side: "buy" | "sell") {
   });
 }
 
+// --- custom ("build your own") investors ---
+export interface CreateInvestorInput {
+  name: string;
+  philosophy: string;
+  approach: "value" | "quality" | "growth" | "momentum";
+  max_positions: number;
+  pe_max?: number;
+  pb_max?: number;
+  roe_min?: number;
+  operating_margin_min?: number;
+  revenue_growth_min?: number;
+  eps_growth_min?: number;
+  return_6m_min?: number;
+  stop_loss_pct?: number;
+  take_profit_vs_intrinsic?: number;
+  max_position_size: number;
+  cash_buffer_min: number;
+  position_sizing: "equal" | "conviction";
+}
+
+export const qkMyInvestors = ["custom-investors"] as const;
+
+export const useMyInvestors = () =>
+  useQuery({ queryKey: qkMyInvestors, queryFn: () => api.get<Investor[]>("/custom-investors/") });
+
+export function useCreateInvestor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateInvestorInput) => api.post<Investor>("/custom-investors/", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qkMyInvestors });
+      qc.invalidateQueries({ queryKey: qk.leaderboard });
+    },
+  });
+}
+
 // --- profile ---
 export function useUpdateProfile() {
   return useMutation({

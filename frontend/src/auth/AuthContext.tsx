@@ -53,6 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const refreshToken = useRef<string | null>(loadRefresh());
+  // Single-flight guard: refresh tokens are single-use/rotating, so concurrent
+  // refreshes (boot restore + OAuth callback + StrictMode) must share ONE call —
+  // otherwise the racing rotations invalidate each other and force a logout.
+  const refreshing = useRef<Promise<string | null> | null>(null);
 
   const applySession = useCallback((resp: AuthResponse): AuthResponse => {
     setAccessToken(resp.access_token);
@@ -71,17 +75,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Exchange the refresh token for a fresh access token; returns it (for api.ts's
   // 401 retry) or null on failure.
-  const refresh = useCallback(async (): Promise<string | null> => {
-    const rt = refreshToken.current;
-    if (!rt) return null;
-    try {
-      const resp = await api.post<AuthResponse>("/auth/refresh", { refresh_token: rt }, { auth: false });
-      applySession(resp);
-      return resp.access_token;
-    } catch {
-      clearSession();
-      return null;
-    }
+  const refresh = useCallback((): Promise<string | null> => {
+    if (refreshing.current) return refreshing.current; // join the in-flight rotation
+    const p = (async (): Promise<string | null> => {
+      const rt = refreshToken.current;
+      if (!rt) return null;
+      try {
+        const resp = await api.post<AuthResponse>("/auth/refresh", { refresh_token: rt }, { auth: false });
+        applySession(resp);
+        return resp.access_token;
+      } catch {
+        clearSession();
+        return null;
+      }
+    })();
+    refreshing.current = p;
+    void p.finally(() => {
+      refreshing.current = null;
+    });
+    return p;
   }, [applySession, clearSession]);
 
   useEffect(() => {

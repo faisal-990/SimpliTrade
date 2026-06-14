@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import { Trophy } from "lucide-react";
-import { useLeaderboard, useFollowing, useFollow, useUnfollow } from "@/hooks/queries";
+import { Trophy, Wand2 } from "lucide-react";
+import { useLeaderboard, useFollowing, useFollow, useUnfollow, useMyInvestors } from "@/hooks/queries";
 import { InvestorCard } from "@/components/investors/InvestorCard";
 import { Loading, ErrorState, EmptyState } from "@/components/common/states";
+import { Button } from "@/components/ui/button";
 import { pct, pnlColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ export default function Investors() {
   const following = useFollowing();
   const follow = useFollow();
   const unfollow = useUnfollow();
+  const mine = useMyInvestors();
 
   const followedIds = new Set((following.data ?? []).map((i) => i.id));
   const pendingId = follow.isPending ? follow.variables : unfollow.isPending ? unfollow.variables : undefined;
@@ -22,12 +24,35 @@ export default function Investors() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Investors</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Famous strategies, running live on real data. Follow the ones you believe in.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Investors</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Famous strategies, running live on real data. Follow the ones you believe in — or build your own.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/app/investors/new"><Wand2 className="h-4 w-4" /> Build your own</Link>
+        </Button>
       </header>
+
+      {/* Investors the user created */}
+      {!!mine.data?.length && (
+        <section className="rounded-2xl border bg-card p-5">
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Your investors</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {mine.data.map((inv) => (
+              <InvestorCard
+                key={inv.id}
+                investor={inv}
+                following={followedIds.has(inv.id)}
+                busy={pendingId === inv.id}
+                onToggleFollow={toggle}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {isLoading ? (
         <Loading />

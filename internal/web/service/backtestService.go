@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -28,12 +29,14 @@ type BacktestService interface {
 type backtestService struct {
 	investors repository.InvestorRepo
 	stocks    repository.StockRepo
-	byName    map[string]strategy.Config // strategy configs keyed by investor name
+	custom    repository.CustomStrategyRepo
+	byName    map[string]strategy.Config // preset configs keyed by investor name
 }
 
-// NewBacktestService loads the strategy configs once and indexes them by the
-// investor name they identify, so a run can resolve a DB investor to its config.
-func NewBacktestService(investors repository.InvestorRepo, stocks repository.StockRepo, strategiesDir string) (BacktestService, error) {
+// NewBacktestService loads the preset strategy configs once and indexes them by
+// the investor name they identify. Custom (user-authored) investors are resolved
+// at run time from the custom-strategy repo by investor id.
+func NewBacktestService(investors repository.InvestorRepo, stocks repository.StockRepo, custom repository.CustomStrategyRepo, strategiesDir string) (BacktestService, error) {
 	configs, err := strategy.LoadDir(strategiesDir)
 	if err != nil {
 		return nil, err
@@ -42,7 +45,23 @@ func NewBacktestService(investors repository.InvestorRepo, stocks repository.Sto
 	for _, c := range configs {
 		byName[strings.ToLower(c.Identity.Name)] = c
 	}
-	return &backtestService{investors: investors, stocks: stocks, byName: byName}, nil
+	return &backtestService{investors: investors, stocks: stocks, custom: custom, byName: byName}, nil
+}
+
+// customConfig returns the stored config for a user-authored investor, if any.
+func (s *backtestService) customConfig(ctx context.Context, investorID uuid.UUID) (strategy.Config, bool) {
+	if s.custom == nil {
+		return strategy.Config{}, false
+	}
+	row, err := s.custom.GetByInvestorID(ctx, investorID)
+	if err != nil {
+		return strategy.Config{}, false
+	}
+	var cfg strategy.Config
+	if err := json.Unmarshal([]byte(row.ConfigJSON), &cfg); err != nil {
+		return strategy.Config{}, false
+	}
+	return cfg, true
 }
 
 func (s *backtestService) Run(ctx context.Context, investorID string, days int, startCash float64) (*dto.BacktestResultDTO, error) {
@@ -57,7 +76,13 @@ func (s *backtestService) Run(ctx context.Context, investorID string, days int, 
 		}
 		return nil, httpx.Internal("could not load investor").WithCause(err)
 	}
-	cfg, ok := s.byName[strings.ToLower(inv.Name)]
+	// Custom investors carry their config in the DB (resolved by id); presets are
+	// matched by name. Check custom first so a custom investor never collides with
+	// a preset of the same name.
+	cfg, ok := s.customConfig(ctx, id)
+	if !ok {
+		cfg, ok = s.byName[strings.ToLower(inv.Name)]
+	}
 	if !ok {
 		return nil, httpx.BadRequest("no strategy definition found for this investor")
 	}

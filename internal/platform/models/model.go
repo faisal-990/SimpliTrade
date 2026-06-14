@@ -97,6 +97,20 @@ type RefreshToken struct {
 	CreatedAt time.Time
 }
 
+// CustomStrategy is a user-authored investor. It owns a bot Investor + Account
+// (so it plugs into the leaderboard, follow, copy-trading, backtest, and engine
+// exactly like a preset), and stores the full engine strategy config as JSON.
+type CustomStrategy struct {
+	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID     uuid.UUID `gorm:"type:uuid;not null;index"` // creator
+	InvestorID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex"`
+	AccountID  uuid.UUID `gorm:"type:uuid;not null"`
+	Name       string    `gorm:"type:varchar(100);not null"`
+	Style      string    `gorm:"type:varchar(40);not null"`
+	ConfigJSON string    `gorm:"type:jsonb;not null"` // marshaled strategy.Config
+	CreatedAt  time.Time
+}
+
 // OAuthAccount links a user to an external identity provider (Google today;
 // Robinhood etc. plug in the same way). A user can link several providers; each
 // (provider, provider_user_id) pair maps to exactly one user.

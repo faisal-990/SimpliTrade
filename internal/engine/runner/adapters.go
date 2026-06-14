@@ -2,12 +2,36 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/faisal-990/ProjectInvestApp/internal/engine/decide"
+	"github.com/faisal-990/ProjectInvestApp/internal/engine/strategy"
 	"github.com/faisal-990/ProjectInvestApp/internal/marketdata"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/google/uuid"
 )
+
+// CustomBots loads user-authored investors from the database as engine bots, so
+// they trade alongside the preset bots with no special-casing. A row whose
+// stored config can't be decoded is skipped rather than failing the whole load.
+func CustomBots(ctx context.Context, custom repository.CustomStrategyRepo) ([]Bot, error) {
+	rows, err := custom.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	bots := make([]Bot, 0, len(rows))
+	for _, r := range rows {
+		var cfg strategy.Config
+		if err := json.Unmarshal([]byte(r.ConfigJSON), &cfg); err != nil {
+			continue
+		}
+		if !cfg.Identity.Enabled {
+			continue
+		}
+		bots = append(bots, Bot{InvestorID: r.InvestorID, AccountID: r.AccountID, Config: cfg})
+	}
+	return bots, nil
+}
 
 // candleHistory is how many recent daily closes to load per stock for the
 // momentum/trend indicators (~1 trading year).

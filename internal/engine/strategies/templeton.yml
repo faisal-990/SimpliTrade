@@ -1,0 +1,56 @@
+schema_version: 2
+
+identity:
+  id: templeton
+  name: "John Templeton"
+  firm: "Templeton Growth Fund"
+  era: "1954–1992"
+  style: global_contrarian_value
+  philosophy: "Buy at the point of maximum pessimism, anywhere in the world, where prices are lowest."
+  enabled: true
+
+profile:
+  risk_rating: 4
+  volatility: medium
+  time_horizon: long
+  typical_holding_days: 1825
+  tagline: "The time of maximum pessimism is the best time to buy."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 1000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US, GLOBAL]
+  min_positions: 20
+  max_positions: 60
+
+buy:
+  gates:
+    valuation:
+      pe_max: 12
+      pb_max: 1.5
+      use_graham_number: true
+    financial_safety:
+      debt_to_equity_max: 0.8
+  margin_of_safety_min: 0.30
+  scoring:
+    valuation: 0.45
+    intrinsic: 0.35
+    stability: 0.20
+
+sell:
+  take_profit_vs_intrinsic: 1.0
+  stop_loss_pct: null
+  thesis_break:
+    debt_to_equity_above: 1.5
+    eps_downtrend_years: 3
+  max_position_size: 0.06
+
+risk:
+  position_sizing: equal
+  max_position_size: 0.06
+  cash_buffer_min: 0.05
+  rebalance: dynamic
+  leverage_max: 1.0

@@ -1,0 +1,53 @@
+schema_version: 2
+
+identity:
+  id: wood
+  name: "Cathie Wood"
+  firm: "ARK Invest"
+  era: "2014–present"
+  style: disruptive_growth
+  philosophy: "Concentrate in disruptive innovation — pay no attention to current earnings, bet on exponential TAM."
+  enabled: true
+
+profile:
+  risk_rating: 9
+  volatility: extreme
+  time_horizon: long
+  typical_holding_days: 1825
+  tagline: "Innovation is the key to growth — and it's on sale during fear."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 500000000
+  market_cap_max: null
+  sectors_include: [Technology, Healthcare, Communication Services, Consumer Cyclical]
+  sectors_exclude: [Utilities, Energy, Financials]
+  geographies: [US, GLOBAL]
+  min_positions: 25
+  max_positions: 50
+
+buy:
+  gates:
+    growth:
+      revenue_growth_yoy_min: 0.25
+      revenue_cagr_3y_min: 0.20
+    quality:
+      gross_margin_min: 0.30
+  margin_of_safety_min: null
+  scoring:
+    growth: 0.70
+    momentum: 0.30
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break:
+    revenue_growth_below: 0.10
+  max_position_size: 0.10
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.10
+  cash_buffer_min: 0.0
+  rebalance: dynamic
+  leverage_max: 1.0

@@ -1,0 +1,54 @@
+schema_version: 2
+
+identity:
+  id: dalio
+  name: "Ray Dalio"
+  firm: "Bridgewater Associates"
+  era: "1975–present"
+  style: macro_risk_parity
+  philosophy: "The All-Weather portfolio — balance risk across asset classes so no single economic regime can hurt you."
+  enabled: true
+
+profile:
+  risk_rating: 3
+  volatility: low
+  time_horizon: long
+  typical_holding_days: 1825
+  tagline: "He who lives by the crystal ball will eat shattered glass."
+
+universe:
+  asset_classes: [etf, equity, bond, commodity]
+  market_cap_min: null
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US, GLOBAL]
+  min_positions: 5
+  max_positions: 12
+
+buy:
+  gates: {}
+  margin_of_safety_min: null
+  scoring:
+    momentum: 0.50
+    valuation: 0.50
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break: {}
+  max_position_size: 0.40
+
+risk:
+  position_sizing: volatility_parity
+  max_position_size: 0.40
+  cash_buffer_min: 0.0
+  rebalance: quarterly
+  leverage_max: 1.0
+
+allocation:
+  equity: 0.30
+  bonds: 0.55
+  gold: 0.075
+  commodities: 0.075
+  cash: 0.0

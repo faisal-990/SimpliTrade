@@ -1,0 +1,60 @@
+schema_version: 2
+
+identity:
+  id: ackman
+  name: "Bill Ackman"
+  firm: "Pershing Square Capital"
+  era: "2004–present"
+  style: activist_concentrated
+  philosophy: "A handful of high-quality, predictable, free-cash-flow-generative businesses, with activism as the catalyst."
+  enabled: true
+
+profile:
+  risk_rating: 6
+  volatility: high
+  time_horizon: long
+  typical_holding_days: 1825
+  tagline: "Concentration, conviction, and catalysts."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 10000000000
+  market_cap_max: null
+  sectors_include: [Consumer Cyclical, Consumer Defensive, Industrials, Real Estate]
+  sectors_exclude: [Biotechnology, Energy]
+  geographies: [US]
+  min_positions: 6
+  max_positions: 12
+
+buy:
+  gates:
+    quality:
+      roic_min: 0.15
+      operating_margin_min: 0.15
+      require_consistent_margins: true
+    valuation:
+      fcf_yield_min: 0.04
+      use_graham_number: false
+    financial_safety:
+      interest_coverage_min: 4.0
+      fcf_positive: true
+  margin_of_safety_min: 0.20
+  scoring:
+    quality: 0.45
+    intrinsic: 0.35
+    valuation: 0.20
+
+sell:
+  take_profit_vs_intrinsic: 1.2
+  stop_loss_pct: null
+  thesis_break:
+    roic_below: 0.10
+    fcf_positive: false
+  max_position_size: 0.25
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.25
+  cash_buffer_min: 0.05
+  rebalance: dynamic
+  leverage_max: 1.0

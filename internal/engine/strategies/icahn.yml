@@ -1,0 +1,54 @@
+schema_version: 2
+
+identity:
+  id: icahn
+  name: "Carl Icahn"
+  firm: "Icahn Enterprises"
+  era: "1968–present"
+  style: activist_value
+  philosophy: "Buy undervalued, mismanaged companies and force the value out through activism."
+  enabled: true
+
+profile:
+  risk_rating: 7
+  volatility: high
+  time_horizon: medium
+  typical_holding_days: 1095
+  tagline: "When most investors agree on something, they're usually wrong."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 2000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US]
+  min_positions: 8
+  max_positions: 18
+
+buy:
+  gates:
+    valuation:
+      pb_max: 2.0
+      ev_ebitda_max: 9.0
+      use_graham_number: false
+    financial_safety:
+      debt_to_equity_max: 1.5
+  margin_of_safety_min: 0.25
+  scoring:
+    valuation: 0.55
+    intrinsic: 0.45
+
+sell:
+  take_profit_vs_intrinsic: 1.0
+  stop_loss_pct: null
+  thesis_break:
+    debt_to_equity_above: 2.5
+  max_position_size: 0.20
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.20
+  cash_buffer_min: 0.05
+  rebalance: dynamic
+  leverage_max: 1.3

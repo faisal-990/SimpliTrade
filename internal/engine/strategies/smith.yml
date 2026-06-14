@@ -1,0 +1,63 @@
+schema_version: 2
+
+identity:
+  id: smith
+  name: "Terry Smith"
+  firm: "Fundsmith"
+  era: "2010–present"
+  style: quality_growth
+  philosophy: "Buy good companies, don't overpay, do nothing — high-return, low-capital-intensity compounders."
+  enabled: true
+
+profile:
+  risk_rating: 4
+  volatility: low
+  time_horizon: long
+  typical_holding_days: 3650
+  tagline: "Buy good companies. Don't overpay. Do nothing."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 10000000000
+  market_cap_max: null
+  sectors_include: [Technology, Healthcare, Consumer Defensive]
+  sectors_exclude: [Financials, Utilities, Energy]
+  geographies: [US, GLOBAL]
+  min_positions: 20
+  max_positions: 30
+
+buy:
+  gates:
+    quality:
+      roic_min: 0.20
+      gross_margin_min: 0.50
+      operating_margin_min: 0.20
+      require_consistent_margins: true
+    financial_safety:
+      interest_coverage_min: 8.0
+      fcf_positive: true
+    valuation:
+      fcf_yield_min: 0.025
+      use_graham_number: false
+    growth:
+      revenue_cagr_3y_min: 0.07
+  margin_of_safety_min: null
+  scoring:
+    quality: 0.60
+    growth: 0.25
+    valuation: 0.15
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break:
+    roic_below: 0.12
+    operating_margin_below: 0.12
+  max_position_size: 0.08
+
+risk:
+  position_sizing: equal
+  max_position_size: 0.08
+  cash_buffer_min: 0.02
+  rebalance: annual
+  leverage_max: 1.0

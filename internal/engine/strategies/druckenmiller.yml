@@ -1,0 +1,60 @@
+schema_version: 2
+
+identity:
+  id: druckenmiller
+  name: "Stanley Druckenmiller"
+  firm: "Duquesne Capital"
+  era: "1981–present"
+  style: macro_momentum
+  philosophy: "Top-down macro with concentrated, momentum-driven bets — and the courage to size up when conviction is high."
+  enabled: true
+
+profile:
+  risk_rating: 9
+  volatility: extreme
+  time_horizon: short
+  typical_holding_days: 180
+  tagline: "It's not whether you're right or wrong, but how much you make when right and lose when wrong."
+
+universe:
+  asset_classes: [equity, etf, commodity]
+  market_cap_min: 2000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US, GLOBAL]
+  min_positions: 3
+  max_positions: 10
+
+buy:
+  gates:
+    momentum:
+      return_3m_min: 0.10
+      return_6m_min: 0.15
+      relative_strength_min: 70
+    technical:
+      price_above_sma_days: 200
+  margin_of_safety_min: null
+  scoring:
+    momentum: 0.70
+    growth: 0.30
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: 0.10
+  trailing_stop_pct: 0.15
+  thesis_break:
+    rsi_below: 40
+  max_position_size: 0.35
+
+risk:
+  position_sizing: pyramid
+  max_position_size: 0.35
+  cash_buffer_min: 0.0
+  rebalance: dynamic
+  leverage_max: 2.0
+
+allocation:
+  equity: 0.70
+  commodities: 0.20
+  cash: 0.10

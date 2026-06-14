@@ -85,20 +85,28 @@ func (s *DBPortfolioSource) Load(ctx context.Context, accountID uuid.UUID) (deci
 	return decide.Portfolio{Cash: acct.Balance, Positions: positions}, nil
 }
 
-// DBRefresher polls the provider for fresh quotes and updates DB prices + appends
-// a candle. This is the engine's market poller (slow lane).
+// DBRefresher polls the provider for fresh quotes and updates DB prices. This is
+// the engine's market poller. It polls only the symbols actually in the database
+// (what was seeded), not a static universe — so seeding a subset (SEED_LIMIT)
+// keeps API usage proportionally small, which matters under a free-tier quota.
 type DBRefresher struct {
 	provider marketdata.Provider
 	stocks   repository.StockRepo
-	symbols  []string
 }
 
-func NewDBRefresher(p marketdata.Provider, stocks repository.StockRepo, symbols []string) *DBRefresher {
-	return &DBRefresher{provider: p, stocks: stocks, symbols: symbols}
+func NewDBRefresher(p marketdata.Provider, stocks repository.StockRepo) *DBRefresher {
+	return &DBRefresher{provider: p, stocks: stocks}
 }
 
 func (r *DBRefresher) Refresh(ctx context.Context) error {
-	quotes, err := r.provider.BatchQuotes(ctx, r.symbols)
+	symbols, err := r.stocks.ListSymbols(ctx)
+	if err != nil {
+		return err
+	}
+	if len(symbols) == 0 {
+		return nil
+	}
+	quotes, err := r.provider.BatchQuotes(ctx, symbols)
 	if err != nil {
 		return err
 	}

@@ -67,7 +67,7 @@ func main() {
 
 	// Provider + runner wiring. Config selects fake (default) or a real provider
 	// (e.g. twelvedata) when MARKET_API_KEY is set — see marketdata.NewProvider.
-	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey)
+	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey, cfg.Market.RatePerMin)
 	r := runner.New(
 		runner.NewDBMarketSource(stockRepo),
 		runner.NewDBPortfolioSource(portfolioRepo),
@@ -75,7 +75,7 @@ func main() {
 		runner.NewPerformanceStore(perfRepo),
 		bots,
 		logger,
-	).WithRefresher(runner.NewDBRefresher(provider, stockRepo, marketdata.Symbols()))
+	).WithRefresher(runner.NewDBRefresher(provider, stockRepo))
 
 	r.Run(ctx, cfg.Engine.TickInterval)
 }

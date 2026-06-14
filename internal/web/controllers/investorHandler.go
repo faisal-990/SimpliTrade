@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"net/http"
-
+	"github.com/faisal-990/ProjectInvestApp/internal/web/httpx"
+	"github.com/faisal-990/ProjectInvestApp/internal/web/middlewares"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/service"
 	"github.com/gin-gonic/gin"
 )
@@ -17,20 +17,12 @@ func NewInvestorHandler(s service.InvestorService) *InvestorHandler {
 	}
 }
 
-// this function is responsible to get all the investors data
-// like once the investor page is loaded
+// HandleGetInvestor lists investors. Full implementation lands in T7; for now it
+// confirms the auth pipeline by echoing the authenticated caller's id.
 func (i *InvestorHandler) HandleGetInvestor(c *gin.Context) {
-	value, exist := c.Get("name")
-	if !exist {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "logged in but user name not found",
-		})
-	}
-	name := value.(string)
-
-	c.JSON(http.StatusOK, gin.H{
-		"welcome ": name,
-		"message":  "so finally you have implemented jwt , awesome , way to go bro , you are the man!!!!!",
+	httpx.OK(c, gin.H{
+		"caller_user_id": middlewares.UserID(c),
+		"message":        "investor listing not implemented yet (T7)",
 	})
 }
 

@@ -1,44 +1,41 @@
 package middlewares
 
 import (
-	"net/http"
 	"strings"
 
-	"github.com/faisal-990/ProjectInvestApp/internal/platform/utils"
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/auth"
+	"github.com/faisal-990/ProjectInvestApp/internal/web/httpx"
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddlewear() gin.HandlerFunc {
+// AuthMiddleware validates the Bearer access token and populates the request
+// context with the caller's identity (user, account, role) for downstream
+// handlers. It is constructed with a TokenManager rather than reading a global,
+// so the signing secret flows from config.
+func AuthMiddleware(tm *auth.TokenManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "user not authorized here",
-			})
-			return // ❗ important: stop further processing
-		}
-
-		// Expected format: "Bearer <token>"
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "invalid authorization format",
-			})
+			httpx.Fail(c, httpx.Unauthorized("authorization header required"))
 			return
 		}
 
-		token := parts[1]
-		claims, err := utils.ValidateJwt(token)
+		// Expected format: "Bearer <token>".
+		token, ok := strings.CutPrefix(authHeader, "Bearer ")
+		if !ok || token == "" {
+			httpx.Fail(c, httpx.Unauthorized("authorization header must be 'Bearer <token>'"))
+			return
+		}
+
+		claims, err := tm.ParseAccessToken(token)
 		if err != nil {
-			utils.LogInfoF("invalid user", err)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "invalid token",
-			})
+			httpx.Fail(c, httpx.Unauthorized("invalid or expired token"))
 			return
 		}
 
-		// Set current user in context for downstream use
-		c.Set("name", claims.Username)
-		c.Next() // ✅ Only continue if everything succeeded
+		c.Set(ctxUserID, claims.UserID)
+		c.Set(ctxAccountID, claims.AccountID)
+		c.Set(ctxRole, claims.Role)
+		c.Next()
 	}
 }

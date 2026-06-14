@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/auth"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/config"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/storage"
@@ -31,10 +32,14 @@ func main() {
 		log.Fatalf("❌ Failed to connect to DB: %s", err)
 	}
 
+	// token manager (issues/validates JWTs + refresh tokens) from config
+	tokenManager := auth.NewTokenManager(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTL, cfg.Auth.RefreshTokenTTL)
+	authMW := middlewares.AuthMiddleware(tokenManager)
+
 	// loading all the layers
 	// auth
 	authrepo := repository.NewAuthRepo(db)
-	authservice := service.NewAuthService(authrepo)
+	authservice := service.NewAuthService(authrepo, tokenManager)
 	authhandler := controllers.NewAuthHandler(authservice)
 
 	// News
@@ -55,19 +60,12 @@ func main() {
 	portfolioservice := service.NewPortfolioService(portfoliorepo)
 	portfoliohandler := controllers.NewPortfolioHandler(portfolioservice)
 
-	// gemerating token to test jwt aith
-	//token, err := utils.GenerateJwt("sawez")
-	//if err != nil {
-	//log.Fatal("failed to generate token")
-	//}
-	//fmt.Printf("TOKEN: %s\n", token)
-	utils.LogInfo("Loaded all the modules , Now starting gin Engine")
+	utils.LogInfo("modules loaded, starting Gin engine")
 	r := gin.Default()
-	log.Println("✅ Created Gin engine")
 
 	r.Use(middlewares.CORSMiddleware())
 
-	router.InitializeRoutes(r, authhandler, dashboardhandler, investorhandler, portfoliohandler)
+	router.InitializeRoutes(r, authMW, authhandler, dashboardhandler, investorhandler, portfoliohandler)
 
 	log.Println("✅ Initialized routes")
 

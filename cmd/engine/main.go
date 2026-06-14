@@ -65,8 +65,9 @@ func main() {
 	}
 	logger.Info("engine: bots provisioned", "count", len(bots))
 
-	// Provider + runner wiring (FakeProvider until T9).
-	var provider marketdata.Provider = marketdata.NewFakeProvider()
+	// Provider + runner wiring. Config selects fake (default) or a real provider
+	// (e.g. twelvedata) when MARKET_API_KEY is set — see marketdata.NewProvider.
+	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey)
 	r := runner.New(
 		runner.NewDBMarketSource(stockRepo),
 		runner.NewDBPortfolioSource(portfolioRepo),

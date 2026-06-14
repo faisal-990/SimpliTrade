@@ -64,13 +64,17 @@ func newAppError(code Code, status int, msg string) *AppError {
 }
 
 // Constructors for the common cases. Message is client-safe (no internals).
-func BadRequest(msg string) *AppError   { return newAppError(CodeBadRequest, http.StatusBadRequest, msg) }
-func Validation(msg string) *AppError   { return newAppError(CodeValidation, http.StatusBadRequest, msg) }
-func Unauthorized(msg string) *AppError { return newAppError(CodeUnauthorized, http.StatusUnauthorized, msg) }
-func Forbidden(msg string) *AppError    { return newAppError(CodeForbidden, http.StatusForbidden, msg) }
-func NotFound(msg string) *AppError     { return newAppError(CodeNotFound, http.StatusNotFound, msg) }
-func Conflict(msg string) *AppError     { return newAppError(CodeConflict, http.StatusConflict, msg) }
-func Internal(msg string) *AppError     { return newAppError(CodeInternal, http.StatusInternalServerError, msg) }
+func BadRequest(msg string) *AppError { return newAppError(CodeBadRequest, http.StatusBadRequest, msg) }
+func Validation(msg string) *AppError { return newAppError(CodeValidation, http.StatusBadRequest, msg) }
+func Unauthorized(msg string) *AppError {
+	return newAppError(CodeUnauthorized, http.StatusUnauthorized, msg)
+}
+func Forbidden(msg string) *AppError { return newAppError(CodeForbidden, http.StatusForbidden, msg) }
+func NotFound(msg string) *AppError  { return newAppError(CodeNotFound, http.StatusNotFound, msg) }
+func Conflict(msg string) *AppError  { return newAppError(CodeConflict, http.StatusConflict, msg) }
+func Internal(msg string) *AppError {
+	return newAppError(CodeInternal, http.StatusInternalServerError, msg)
+}
 
 // successEnvelope and errorEnvelope are the only two response shapes the API emits.
 type successEnvelope struct {

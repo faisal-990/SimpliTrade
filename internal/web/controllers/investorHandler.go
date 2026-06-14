@@ -12,29 +12,69 @@ type InvestorHandler struct {
 }
 
 func NewInvestorHandler(s service.InvestorService) *InvestorHandler {
-	return &InvestorHandler{
-		service: s,
-	}
+	return &InvestorHandler{service: s}
 }
 
-// HandleGetInvestor lists investors. Full implementation lands in T7; for now it
-// confirms the auth pipeline by echoing the authenticated caller's id.
+// HandleGetInvestor returns the leaderboard (investors ranked by ROI).
 func (i *InvestorHandler) HandleGetInvestor(c *gin.Context) {
-	httpx.OK(c, gin.H{
-		"caller_user_id": middlewares.UserID(c),
-		"message":        "investor listing not implemented yet (T7)",
-	})
+	limit := atoiDefault(c.Query("limit"), 50)
+	offset := atoiDefault(c.Query("offset"), 0)
+	investors, err := i.service.Leaderboard(c.Request.Context(), limit, offset)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, investors)
 }
 
-// this function is responsible to get a sinlge investor data based on the investor id
+// HandleGetInvestorById returns one investor's profile + standing.
 func (i *InvestorHandler) HandleGetInvestorById(c *gin.Context) {
+	investor, err := i.service.Get(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, investor)
 }
 
-func (i *InvestorHandler) HandleFollowInvestor(c *gin.Context) {
-}
-
-func (i *InvestorHandler) HandleUnfollowInvestor(c *gin.Context) {
-}
-
+// HandleGetInvestorTrades returns an investor's recent trades.
 func (i *InvestorHandler) HandleGetInvestorTrades(c *gin.Context) {
+	limit := atoiDefault(c.Query("limit"), 50)
+	offset := atoiDefault(c.Query("offset"), 0)
+	trades, err := i.service.Trades(c.Request.Context(), c.Param("id"), limit, offset)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, trades)
+}
+
+// HandleFollowInvestor makes the caller follow an investor (visibility only).
+func (i *InvestorHandler) HandleFollowInvestor(c *gin.Context) {
+	if err := i.service.Follow(c.Request.Context(), middlewares.UserID(c), c.Param("id")); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"following": true})
+}
+
+// HandleUnfollowInvestor removes a follow.
+func (i *InvestorHandler) HandleUnfollowInvestor(c *gin.Context) {
+	if err := i.service.Unfollow(c.Request.Context(), middlewares.UserID(c), c.Param("id")); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"following": false})
+}
+
+// HandleGetFeed returns the aggregated trade feed of the investors the caller
+// follows.
+func (i *InvestorHandler) HandleGetFeed(c *gin.Context) {
+	limit := atoiDefault(c.Query("limit"), 50)
+	feed, err := i.service.Feed(c.Request.Context(), middlewares.UserID(c), limit)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, feed)
 }

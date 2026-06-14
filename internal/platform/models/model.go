@@ -125,7 +125,8 @@ type Stock struct {
 	Symbol       string    `gorm:"type:varchar(25);not null;uniqueIndex"`
 	Name         string    `gorm:"type:varchar(100);not null"`
 	Exchange     string    `gorm:"type:varchar(50)"`
-	Sector       string    `gorm:"type:varchar(50);index"` // used by strategy universe filters
+	Sector       string    `gorm:"type:varchar(50);index"`                           // used by strategy universe filters
+	AssetClass   string    `gorm:"type:varchar(20);not null;default:'equity';index"` // equity|bond|gold|commodity (for macro allocation)
 	CurrentPrice float64   `gorm:"type:numeric(10,2);not null"`
 	Currency     string    `gorm:"type:varchar(3);default:'USD'"`
 	// Fundamentals is stored as a single JSONB column. The engine loads it

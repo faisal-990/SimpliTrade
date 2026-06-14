@@ -39,4 +39,5 @@ green (`make check`).
 ## Status
 - ✅ Strategies: v2 schema + 20 investor profiles (`internal/engine/strategies/`).
 - ✅ T0 Foundations.
-- ▶ Next: T1 Auth + Account.
+- ✅ T1 Auth + Account — signup/login/refresh-rotation/logout/me, JWT (userID+accountID+role), default sim account; E2E through the real stack with an in-memory repo.
+- ▶ Next: T2 Market data (FakeProvider first).

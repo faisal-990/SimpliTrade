@@ -49,10 +49,10 @@ func main() {
 				{Mode: models.ModeSim, Currency: "USD", Balance: 100000, IsActive: true},
 			},
 		}
-		if err := authRepo.AddUser(ctx, newUser); err != nil {
-			log.Fatalf("❌ AddUser failed: %v", err)
+		if err := authRepo.CreateUser(ctx, newUser); err != nil {
+			log.Fatalf("❌ CreateUser failed: %v", err)
 		}
-		fmt.Println("✅ AddUser success")
+		fmt.Println("✅ CreateUser success")
 	}
 
 	fmt.Println("🔍 Verifying by fetching from DB...")

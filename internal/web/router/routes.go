@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/faisal-990/ProjectInvestApp/internal/web/controllers"
-	"github.com/faisal-990/ProjectInvestApp/internal/web/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,57 +13,60 @@ func GethealthInfo(c *gin.Context) {
 	})
 }
 
+// InitializeRoutes wires all API routes. authMW is the auth guard applied to
+// protected groups; it is built in main from the TokenManager so routing has no
+// knowledge of the signing secret.
 func InitializeRoutes(
 	router *gin.Engine,
+	authMW gin.HandlerFunc,
 	authHandler *controllers.AuthHandler,
 	dashboardHandler *controllers.DashboardHandler,
 	investorHandler *controllers.InvestorHandler,
 	portfolioHandler *controllers.PortfolioHandler,
 ) {
-	router.Use(middlewares.LoggerMiddleware())
 	api := router.Group("/api")
-	// Health check
 
 	api.GET("/health", GethealthInfo)
 
-	// Auth Routes
+	// Auth — signup/login/refresh/logout are public; /me requires a valid token.
 	authGroup := api.Group("/auth")
 	{
-		authGroup.POST("/login", authHandler.HandleAuthLogin)
 		authGroup.POST("/signup", authHandler.HandleAuthSignup)
-		authGroup.POST("/forgot-password", middlewares.AuthMiddlewear())
-		authGroup.POST("/me", middlewares.AuthMiddlewear(), authHandler.HandleAuthForMe)
+		authGroup.POST("/login", authHandler.HandleAuthLogin)
+		authGroup.POST("/refresh", authHandler.HandleAuthRefresh)
+		authGroup.POST("/logout", authHandler.HandleAuthLogout)
+		authGroup.GET("/me", authMW, authHandler.HandleAuthForMe)
 	}
 
-	// Investor Routes
+	// Investor routes (protected).
 	investorGroup := api.Group("/investor")
-	investorGroup.Use(middlewares.AuthMiddlewear())
+	investorGroup.Use(authMW)
 	{
 		investorGroup.GET("/", investorHandler.HandleGetInvestor)
 		investorGroup.GET("/:id", investorHandler.HandleGetInvestorById)
 		investorGroup.GET("/:id/trades", investorHandler.HandleGetInvestorTrades)
-		investorGroup.DELETE("/:id/follow", middlewares.AuthMiddlewear(), investorHandler.HandleUnfollowInvestor)
 		investorGroup.POST("/:id/follow", investorHandler.HandleFollowInvestor)
+		investorGroup.DELETE("/:id/follow", investorHandler.HandleUnfollowInvestor)
 	}
 
-	// Trade Routes
+	// Trade routes (protected).
 	tradeGroup := api.Group("/trade")
-	tradeGroup.Use(middlewares.AuthMiddlewear())
+	tradeGroup.Use(authMW)
 	{
 		tradeGroup.POST("/buy", portfolioHandler.HandleBuyStocks)
 		tradeGroup.POST("/sell", portfolioHandler.HandleSellStocks)
 		tradeGroup.GET("/history", portfolioHandler.HandleGetUsersTradeHistory)
 	}
 
-	// Portfolio Routes
+	// Portfolio routes (protected).
 	portfolioGroup := api.Group("/portfolio")
-	portfolioGroup.Use(middlewares.AuthMiddlewear())
+	portfolioGroup.Use(authMW)
 	{
 		portfolioGroup.GET("/stats", portfolioHandler.HandleGetUserPortfolioStats)
 		portfolioGroup.GET("/", portfolioHandler.HandleGetUsersStockHoldings)
 	}
 
-	// Dashboard Routes
+	// Dashboard routes (public — market data is not user-specific).
 	dashboardGroup := api.Group("/dashboard")
 	{
 		dashboardGroup.GET("/fundamentals", dashboardHandler.HandleGetStocksFundamentals)

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { UserPlus, UserCheck, ArrowUpRight, Users } from "lucide-react";
+import { UserPlus, UserCheck, ArrowUpRight, Users, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/common/states";
 import { pct, pnlColor } from "@/lib/format";
@@ -12,11 +12,14 @@ interface Props {
   following: boolean;
   busy?: boolean;
   onToggleFollow: (id: string) => void;
+  // When provided (only for investors the user created), shows a delete action.
+  onDelete?: (id: string) => void;
+  deleting?: boolean;
 }
 
 // Rich investor card: avatar, name, strategy + risk chips, rank, big ROI, bio
 // snippet, follow toggle, and a link into the full profile.
-export function InvestorCard({ investor, following, busy, onToggleFollow }: Props) {
+export function InvestorCard({ investor, following, busy, onToggleFollow, onDelete, deleting }: Props) {
   const risk = riskOf(investor.strategy);
   return (
     <div className="group flex flex-col rounded-2xl border bg-card p-5 transition-colors hover:border-primary/40">
@@ -66,6 +69,18 @@ export function InvestorCard({ investor, following, busy, onToggleFollow }: Prop
             View <ArrowUpRight className="h-4 w-4" />
           </Link>
         </Button>
+        {onDelete && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-muted-foreground hover:text-loss"
+            disabled={deleting}
+            title="Delete this investor"
+            onClick={() => onDelete(investor.id)}
+          >
+            {deleting ? <Spinner /> : <Trash2 className="h-4 w-4" />}
+          </Button>
+        )}
       </div>
     </div>
   );

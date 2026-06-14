@@ -27,6 +27,7 @@ func InitializeRoutes(
 	adminHandler *controllers.AdminHandler,
 	backtestHandler *controllers.BacktestHandler,
 	oauthHandler *controllers.OAuthHandler,
+	customInvestorHandler *controllers.CustomInvestorHandler,
 	adminMW gin.HandlerFunc,
 ) {
 	api := router.Group("/api")
@@ -64,6 +65,16 @@ func InitializeRoutes(
 	// Investors the caller follows + their aggregated trade feed (protected).
 	api.GET("/following", authMW, investorHandler.HandleGetFollowing)
 	api.GET("/feed", authMW, investorHandler.HandleGetFeed)
+
+	// User-authored ("build your own") investors (protected). Separate path so it
+	// doesn't collide with /investor/:id.
+	customGroup := api.Group("/custom-investors")
+	customGroup.Use(authMW)
+	{
+		customGroup.POST("/", customInvestorHandler.HandleCreate)
+		customGroup.GET("/", customInvestorHandler.HandleListMine)
+		customGroup.DELETE("/:id", customInvestorHandler.HandleDelete)
+	}
 
 	// Capped copy-trading allocations (protected).
 	allocGroup := api.Group("/allocations")

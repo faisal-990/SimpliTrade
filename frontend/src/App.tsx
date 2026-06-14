@@ -11,6 +11,7 @@ import StockDetail from "@/pages/StockDetail";
 import Portfolio from "@/pages/Portfolio";
 import Investors from "@/pages/Investors";
 import InvestorDetail from "@/pages/InvestorDetail";
+import CreateInvestor from "@/pages/CreateInvestor";
 import Feed from "@/pages/Feed";
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="stock/:symbol" element={<StockDetail />} />
           <Route path="portfolio" element={<Portfolio />} />
           <Route path="investors" element={<Investors />} />
+          <Route path="investors/new" element={<CreateInvestor />} />
           <Route path="investors/:id" element={<InvestorDetail />} />
           <Route path="feed" element={<Feed />} />
           <Route path="profile" element={<Profile />} />

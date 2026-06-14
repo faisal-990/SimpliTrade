@@ -80,6 +80,11 @@ func main() {
 	investorservice := service.NewInvestorService(investorrepo)
 	investorhandler := controllers.NewInvestorHandler(investorservice)
 
+	// custom ("build your own") investors
+	customrepo := repository.NewCustomStrategyRepo(db)
+	custominvestorservice := service.NewCustomInvestorService(customrepo, repository.NewBotRepo(db), investorrepo)
+	custominvestorhandler := controllers.NewCustomInvestorHandler(custominvestorservice)
+
 	// trading (broker seam: sim today, live later via Account.Mode)
 	traderepo := repository.NewTradeRepo(db)
 	simBroker := broker.NewSimulatedBroker(traderepo)
@@ -97,12 +102,14 @@ func main() {
 
 	// admin/dev: an in-process engine runner so "simulate market" can run a cycle
 	// on demand (bots + user copy-allocations trade, leaderboard recomputes).
-	engineRunner := buildEngineRunner(db, simBroker)
-	adminhandler := controllers.NewAdminHandler(engineRunner, repository.NewResetRepo(db))
+	adminhandler := controllers.NewAdminHandler(
+		func() *runner.Runner { return buildEngineRunner(db, simBroker) },
+		repository.NewResetRepo(db),
+	)
 	adminMW := middlewares.AdminOnly(!cfg.IsProd())
 
 	// backtest: replay an investor's strategy over historical prices.
-	backtestservice, err := service.NewBacktestService(investorrepo, stockrepo, "internal/engine/strategies")
+	backtestservice, err := service.NewBacktestService(investorrepo, stockrepo, customrepo, "internal/engine/strategies")
 	if err != nil {
 		log.Fatalf("❌ Failed to load backtest strategies: %s", err)
 	}
@@ -126,7 +133,7 @@ func main() {
 	r.GET("/readyz", readyHandler(db))
 	r.GET("/metrics", middlewares.MetricsHandler())
 
-	router.InitializeRoutes(r, authMW, authhandler, dashboardhandler, investorhandler, portfoliohandler, allocationhandler, adminhandler, backtesthandler, oauthhandler, adminMW)
+	router.InitializeRoutes(r, authMW, authhandler, dashboardhandler, investorhandler, portfoliohandler, allocationhandler, adminhandler, backtesthandler, oauthhandler, custominvestorhandler, adminMW)
 	log.Println("✅ Initialized routes")
 
 	runServer(r, cfg.HTTP.Port)
@@ -159,6 +166,13 @@ func buildEngineRunner(db *gorm.DB, sim *broker.SimulatedBroker) *runner.Runner 
 			continue
 		}
 		bots = append(bots, runner.Bot{InvestorID: investorID, AccountID: accountID, Config: c})
+	}
+
+	// User-authored investors trade alongside the presets.
+	if customBots, err := runner.CustomBots(ctx, repository.NewCustomStrategyRepo(db)); err != nil {
+		log.Printf("⚠️  admin engine: load custom investors: %v", err)
+	} else {
+		bots = append(bots, customBots...)
 	}
 
 	return runner.New(

@@ -10,6 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// ErrInvestorInUse means a custom investor can't be deleted because money is
+// still allocated to it.
+var ErrInvestorInUse = errors.New("repository: investor has active allocations")
+
 // CustomStrategyRepo persists user-authored investors. Listing/loading their
 // configs lets the engine and backtester treat them exactly like preset bots.
 type CustomStrategyRepo interface {
@@ -17,6 +21,9 @@ type CustomStrategyRepo interface {
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]models.CustomStrategy, error)
 	ListAll(ctx context.Context) ([]models.CustomStrategy, error)
 	GetByInvestorID(ctx context.Context, investorID uuid.UUID) (*models.CustomStrategy, error)
+	// Delete removes a custom investor the user owns (identity cascades). It
+	// refuses while active copy-allocations still reference it.
+	Delete(ctx context.Context, userID, investorID uuid.UUID) error
 }
 
 type customStrategyRepo struct{ DB *gorm.DB }
@@ -44,6 +51,37 @@ func (r *customStrategyRepo) ListAll(ctx context.Context) ([]models.CustomStrate
 		return nil, err
 	}
 	return out, nil
+}
+
+func (r *customStrategyRepo) Delete(ctx context.Context, userID, investorID uuid.UUID) error {
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var cs models.CustomStrategy
+		if err := tx.Where("investor_id = ? AND user_id = ?", investorID, userID).First(&cs).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound // not found, or not owned by this user
+			}
+			return err
+		}
+		// Refuse while anyone still has money allocated to this investor.
+		var active int64
+		if err := tx.Model(&models.Account{}).
+			Where("kind = ? AND investor_id = ? AND is_active = ?", models.KindCopy, investorID, true).
+			Count(&active).Error; err != nil {
+			return err
+		}
+		if active > 0 {
+			return ErrInvestorInUse
+		}
+		// Delete the identity — FK cascades remove follows, performance, the bot's
+		// account, holdings and trades.
+		if err := tx.Where("id = ?", investorID).Delete(&models.Investor{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("id = ?", investorID).Delete(&models.User{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&cs).Error
+	})
 }
 
 func (r *customStrategyRepo) GetByInvestorID(ctx context.Context, investorID uuid.UUID) (*models.CustomStrategy, error) {

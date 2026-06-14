@@ -40,3 +40,12 @@ func (h *CustomInvestorHandler) HandleListMine(c *gin.Context) {
 	}
 	httpx.OK(c, items)
 }
+
+// HandleDelete removes a custom investor the caller created.
+func (h *CustomInvestorHandler) HandleDelete(c *gin.Context) {
+	if err := h.service.Delete(c.Request.Context(), middlewares.UserID(c), c.Param("id")); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"deleted": true})
+}

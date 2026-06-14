@@ -73,6 +73,7 @@ func InitializeRoutes(
 	{
 		customGroup.POST("/", customInvestorHandler.HandleCreate)
 		customGroup.GET("/", customInvestorHandler.HandleListMine)
+		customGroup.DELETE("/:id", customInvestorHandler.HandleDelete)
 	}
 
 	// Capped copy-trading allocations (protected).

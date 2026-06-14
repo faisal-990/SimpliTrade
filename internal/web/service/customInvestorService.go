@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/faisal-990/ProjectInvestApp/internal/engine/strategy"
@@ -19,6 +20,7 @@ import (
 type CustomInvestorService interface {
 	Create(ctx context.Context, userID string, req dto.CreateInvestorRequest) (*dto.InvestorDTO, error)
 	ListMine(ctx context.Context, userID string) ([]dto.InvestorDTO, error)
+	Delete(ctx context.Context, userID, investorID string) error
 }
 
 type customInvestorService struct {
@@ -79,6 +81,27 @@ func (s *customInvestorService) Create(ctx context.Context, userID string, req d
 	}
 	d := toInvestorDTO(*inv)
 	return &d, nil
+}
+
+func (s *customInvestorService) Delete(ctx context.Context, userID, investorID string) error {
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return httpx.Unauthorized("invalid user identity")
+	}
+	iid, err := uuid.Parse(investorID)
+	if err != nil {
+		return httpx.BadRequest("invalid investor id")
+	}
+	switch err := s.custom.Delete(ctx, uid, iid); {
+	case err == nil:
+		return nil
+	case errors.Is(err, repository.ErrNotFound):
+		return httpx.NotFound("investor not found, or you didn't create it")
+	case errors.Is(err, repository.ErrInvestorInUse):
+		return httpx.BadRequest("stop your allocations to this investor before deleting it")
+	default:
+		return httpx.Internal("could not delete investor").WithCause(err)
+	}
 }
 
 func (s *customInvestorService) ListMine(ctx context.Context, userID string) ([]dto.InvestorDTO, error) {

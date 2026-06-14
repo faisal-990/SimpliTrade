@@ -140,6 +140,18 @@ export function useCreateInvestor() {
   });
 }
 
+export function useDeleteInvestor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del(`/custom-investors/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qkMyInvestors });
+      qc.invalidateQueries({ queryKey: qk.leaderboard });
+      qc.invalidateQueries({ queryKey: qk.following });
+    },
+  });
+}
+
 // --- profile ---
 export function useUpdateProfile() {
   return useMutation({

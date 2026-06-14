@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Trophy, Wand2 } from "lucide-react";
-import { useLeaderboard, useFollowing, useFollow, useUnfollow, useMyInvestors } from "@/hooks/queries";
+import { useLeaderboard, useFollowing, useFollow, useUnfollow, useMyInvestors, useDeleteInvestor } from "@/hooks/queries";
 import { InvestorCard } from "@/components/investors/InvestorCard";
 import { Loading, ErrorState, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,12 @@ export default function Investors() {
   const follow = useFollow();
   const unfollow = useUnfollow();
   const mine = useMyInvestors();
+  const del = useDeleteInvestor();
+  const removeMine = (id: string) => {
+    if (window.confirm("Delete this investor? This can't be undone. (Stop any allocations to it first.)")) {
+      del.mutate(id);
+    }
+  };
 
   const followedIds = new Set((following.data ?? []).map((i) => i.id));
   const pendingId = follow.isPending ? follow.variables : unfollow.isPending ? unfollow.variables : undefined;
@@ -48,6 +54,8 @@ export default function Investors() {
                 following={followedIds.has(inv.id)}
                 busy={pendingId === inv.id}
                 onToggleFollow={toggle}
+                onDelete={removeMine}
+                deleting={del.isPending && del.variables === inv.id}
               />
             ))}
           </div>

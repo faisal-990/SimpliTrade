@@ -80,8 +80,9 @@ export default function Portfolio() {
     <div className="space-y-7">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Portfolio</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Your simulated positions, valued at the latest prices.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Portfolio</h1>
+          <div className="hairline-gold mt-2 w-24" />
+          <p className="mt-2 text-sm text-muted-foreground">Your simulated positions, valued at the latest prices.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -273,7 +274,7 @@ function Stat({ label, value, sub, accent }: { label: string; value: string; sub
   return (
     <div className="rounded-xl border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 text-xl font-semibold tabular-nums", accent)}>{value}</p>
+      <p className={cn("font-display mt-1 text-2xl font-semibold tabular-nums", accent)}>{value}</p>
       {sub && <p className={cn("text-xs tabular-nums", accent)}>{sub}</p>}
     </div>
   );

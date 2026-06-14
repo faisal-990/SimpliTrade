@@ -29,8 +29,9 @@ export default function Analytics() {
   return (
     <div className="space-y-7">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">How your portfolio has performed — return, risk, and where you're exposed.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Analytics</h1>
+        <div className="hairline-gold mt-2 w-24" />
+        <p className="mt-2 text-sm text-muted-foreground">How your portfolio has performed — return, risk, and where you're exposed.</p>
       </header>
 
       {/* Metrics */}
@@ -107,7 +108,7 @@ function Metric({ label, value, accent }: { label: string; value: string; accent
   return (
     <div className="rounded-xl border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 text-lg font-semibold tabular-nums", accent)}>{value}</p>
+      <p className={cn("font-display mt-1 text-xl font-semibold tabular-nums", accent)}>{value}</p>
     </div>
   );
 }

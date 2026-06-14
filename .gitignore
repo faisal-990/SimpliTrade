@@ -12,6 +12,13 @@
 *.exe
 *.test
 *.out
+# Stray compiled binaries (`go build` with no -o lands these at root)
+/main
+/server
+/engine
+/daemon
+# Engine scratch output
+/output.txt
 
 # Logs
 *.log
@@ -36,3 +43,7 @@ data/
 # --- Editor/IDE ---
 .vscode/
 .idea/
+
+
+
+.ghcontext

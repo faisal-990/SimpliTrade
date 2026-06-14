@@ -1,0 +1,162 @@
+// Package config centralizes all environment-driven configuration into a single
+// typed struct loaded once at startup. Nothing else in the codebase should read
+// os.Getenv directly — depend on *Config instead, so settings are discoverable,
+// testable, and validated in one place.
+package config
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/joho/godotenv"
+)
+
+// Env identifies the runtime environment. It governs safety defaults: in Prod we
+// refuse to boot with insecure placeholders, in Dev we fill them with warnings.
+type Env string
+
+const (
+	EnvDev  Env = "dev"
+	EnvProd Env = "prod"
+	EnvTest Env = "test"
+)
+
+// Config is the fully-resolved application configuration.
+type Config struct {
+	Env  Env
+	HTTP HTTPConfig
+	DB   DBConfig
+	Auth AuthConfig
+	// Market holds the external market-data provider settings. Keys are optional
+	// today (FakeProvider needs none) and wired in at the end of the build.
+	Market MarketConfig
+}
+
+type HTTPConfig struct {
+	Port string
+}
+
+type DBConfig struct {
+	Host     string
+	User     string
+	Password string
+	Name     string
+	Port     string
+	SSLMode  string
+	TimeZone string
+}
+
+// DSN renders the GORM/pgx connection string.
+func (d DBConfig) DSN() string {
+	return fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
+		d.Host, d.User, d.Password, d.Name, d.Port, d.SSLMode, d.TimeZone,
+	)
+}
+
+type AuthConfig struct {
+	JWTSecret       string
+	AccessTokenTTL  time.Duration
+	RefreshTokenTTL time.Duration
+}
+
+type MarketConfig struct {
+	Provider string // "fake" until a real provider is wired in
+	APIKey   string
+}
+
+// devJWTSecret is the only insecure fallback we tolerate, and only outside prod.
+const devJWTSecret = "dev-insecure-jwt-secret-change-me"
+
+// Load reads configuration from the process environment, optionally seeded by a
+// .env file at the working directory (ignored if absent — production injects real
+// env vars). It returns an error only for misconfigurations that are unsafe to
+// run with (e.g. a missing JWT secret in prod), never merely for absent optional
+// keys, so local/offline development needs no setup.
+func Load() (*Config, error) {
+	// Best-effort: a missing .env is normal (prod, CI, tests). Only surface real
+	// parse errors.
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("config: loading .env: %w", err)
+	}
+
+	env := Env(strings.ToLower(getString("APP_ENV", string(EnvDev))))
+
+	cfg := &Config{
+		Env: env,
+		HTTP: HTTPConfig{
+			Port: getString("PORT", "8080"),
+		},
+		DB: DBConfig{
+			Host:     getString("HOST", "localhost"),
+			User:     getString("DBUSER", "postgres"),
+			Password: getString("DBPASS", "postgres"),
+			Name:     getString("DBNAME", "simplitrade"),
+			Port:     getString("DBPORT", "5432"),
+			SSLMode:  getString("SSLMODE", "disable"),
+			TimeZone: getString("TIMEZONE", "UTC"),
+		},
+		Auth: AuthConfig{
+			JWTSecret:       getString("JWT_KEY", ""),
+			AccessTokenTTL:  getDuration("ACCESS_TOKEN_TTL", 15*time.Minute),
+			RefreshTokenTTL: getDuration("REFRESH_TOKEN_TTL", 720*time.Hour), // 30 days
+		},
+		Market: MarketConfig{
+			Provider: getString("MARKET_PROVIDER", "fake"),
+			APIKey:   getString("MARKET_API_KEY", ""),
+		},
+	}
+
+	if err := cfg.validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
+// validate enforces invariants and fills safe dev fallbacks. It mutates cfg in
+// place for the JWT secret fallback so callers always receive a usable value.
+func (c *Config) validate() error {
+	if c.Auth.JWTSecret == "" {
+		if c.Env == EnvProd {
+			return errors.New("config: JWT_KEY is required in prod")
+		}
+		// Dev/test convenience: deterministic secret so tokens work offline.
+		c.Auth.JWTSecret = devJWTSecret
+	}
+	if c.Auth.AccessTokenTTL <= 0 {
+		return errors.New("config: ACCESS_TOKEN_TTL must be positive")
+	}
+	if c.Auth.RefreshTokenTTL <= c.Auth.AccessTokenTTL {
+		return errors.New("config: REFRESH_TOKEN_TTL must exceed ACCESS_TOKEN_TTL")
+	}
+	return nil
+}
+
+// IsProd reports whether the app is running in production.
+func (c *Config) IsProd() bool { return c.Env == EnvProd }
+
+func getString(key, def string) string {
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		return v
+	}
+	return def
+}
+
+func getDuration(key string, def time.Duration) time.Duration {
+	v, ok := os.LookupEnv(key)
+	if !ok || v == "" {
+		return def
+	}
+	// Accept Go duration strings ("15m", "720h") or a bare integer of seconds.
+	if d, err := time.ParseDuration(v); err == nil {
+		return d
+	}
+	if secs, err := strconv.Atoi(v); err == nil {
+		return time.Duration(secs) * time.Second
+	}
+	return def
+}

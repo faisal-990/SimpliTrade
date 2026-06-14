@@ -10,20 +10,67 @@ import (
 // =======================
 // User Model
 // =======================
+// A User is an identity. Money does not live here — it lives on Account, so a
+// single user can hold a simulated account and (later) a live-money account
+// without schema changes. Engine-driven investor personas are Users with
+// IsBot=true plus an Investor profile.
 type User struct {
-	ID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Name        string    `gorm:"type:varchar(100);not null"`
-	Email       string    `gorm:"type:varchar(100);uniqueIndex;not null"`
-	Password    string    `gorm:"not null"`
-	IsActive    bool      `gorm:"default:true"`
-	LastLoginAt *time.Time
-	Balance     float64   `gorm:"type:numeric(15,2);default:100000"` // Starting simulation balance
-	Trades      []Trade   `gorm:"foreignKey:UserID"`
-	Holdings    []Holding `gorm:"foreignKey:UserID"`
-	Follows     []Follow  `gorm:"foreignKey:FollowerID"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
+	ID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Name          string    `gorm:"type:varchar(100);not null"`
+	Email         string    `gorm:"type:varchar(100);uniqueIndex;not null"`
+	Password      string    `gorm:"not null"`                                 // bcrypt hash, never plaintext
+	Role          string    `gorm:"type:varchar(20);not null;default:'user'"` // user | admin
+	IsBot         bool      `gorm:"not null;default:false"`                   // engine-driven investor persona
+	IsActive      bool      `gorm:"default:true"`
+	EmailVerified bool      `gorm:"not null;default:false"`
+	LastLoginAt   *time.Time
+	Accounts      []Account `gorm:"foreignKey:UserID"` // sim and/or live trading accounts
+	Trades        []Trade   `gorm:"foreignKey:UserID"`
+	Holdings      []Holding `gorm:"foreignKey:UserID"`
+	Follows       []Follow  `gorm:"foreignKey:FollowerID"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DeletedAt     gorm.DeletedAt `gorm:"index"`
+}
+
+// =======================
+// Account Model (sim / live money)
+// =======================
+// Account isolates money from identity and is the seam for the real↔fake-money
+// toggle: the trade service selects a Broker implementation from Account.Mode,
+// so flipping a user to live trading is a data change, not a code change.
+type Account struct {
+	ID        uuid.UUID   `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID    uuid.UUID   `gorm:"type:uuid;not null;uniqueIndex:idx_user_mode"`
+	User      User        `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
+	Mode      AccountMode `gorm:"type:varchar(4);not null;default:'sim';uniqueIndex:idx_user_mode"` // one account per mode per user
+	Currency  string      `gorm:"type:varchar(3);not null;default:'USD'"`
+	Balance   float64     `gorm:"type:numeric(15,2);not null;default:100000"` // cash available to trade
+	IsActive  bool        `gorm:"not null;default:true"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// AccountMode enumerates the money mode of an Account.
+type AccountMode string
+
+const (
+	ModeSim  AccountMode = "sim"  // virtual money (SimulatedBroker)
+	ModeLive AccountMode = "live" // real money (LiveBroker — future)
+)
+
+// =======================
+// RefreshToken Model
+// =======================
+// Stores only the SHA-256 hash of an opaque refresh token (never the token
+// itself), supporting rotation and revocation for the auth flow.
+type RefreshToken struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	TokenHash string    `gorm:"type:varchar(64);not null;uniqueIndex"`
+	ExpiresAt time.Time `gorm:"not null;index"`
+	RevokedAt *time.Time
+	CreatedAt time.Time
 }
 
 // =======================

@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
+	"log/slog"
 	"time"
 
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/config"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/storage"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/utils"
@@ -14,22 +15,21 @@ import (
 	"github.com/faisal-990/ProjectInvestApp/internal/web/router"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/service"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	utils.LogInfo("###LOADING env files")
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env files")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("❌ Failed to load config: %s", err)
 	}
-	log.Println("✅ Loaded .env files")
+	utils.InitLogger(cfg.IsProd(), slog.LevelInfo)
+	utils.LogInfo("configuration loaded")
 
-	utils.LogInfo("###CONNECTING to db......")
-	db, err := storage.Connect()
+	utils.LogInfo("connecting to database")
+	db, err := storage.Connect(cfg.DB)
 	if err != nil {
 		log.Fatalf("❌ Failed to connect to DB: %s", err)
 	}
-	log.Println("✅ Connected to DB")
 
 	// loading all the layers
 	// auth
@@ -71,10 +71,7 @@ func main() {
 
 	log.Println("✅ Initialized routes")
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	port := cfg.HTTP.Port
 	fmt.Println("*****************************")
 	fmt.Printf("STARTING SERVER AT:%s\n", time.Now())
 	fmt.Println("*****************************")

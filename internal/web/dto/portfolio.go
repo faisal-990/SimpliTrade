@@ -1,5 +1,14 @@
 package dto
 
+// TraderDTO is one real user on the social leaderboard.
+type TraderDTO struct {
+	Rank      int     `json:"rank"`
+	Name      string  `json:"name"`
+	AvatarURL string  `json:"avatar_url"`
+	Value     float64 `json:"value"`
+	ROI       float64 `json:"roi"`
+}
+
 // HoldingDTO is one valued position in the portfolio response.
 type HoldingDTO struct {
 	Symbol          string  `json:"symbol"`

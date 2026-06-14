@@ -39,6 +39,9 @@ export function InvestorCard({ investor, following, busy, onToggleFollow, onDele
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">{strategyLabel(investor.strategy)}</span>
             <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", riskChipClass(risk.level))}>{risk.label}</span>
+            {investor.created_by && (
+              <span className="rounded bg-primary/12 px-1.5 py-0.5 text-[10px] font-medium text-primary">by {investor.created_by}</span>
+            )}
           </div>
         </div>
         <div className="text-right">

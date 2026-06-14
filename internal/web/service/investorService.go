@@ -160,5 +160,6 @@ func toInvestorDTO(it repository.InvestorSummary) dto.InvestorDTO {
 	return dto.InvestorDTO{
 		ID: it.ID.String(), Name: it.Name, Bio: it.Bio,
 		Strategy: it.Strategy, ROI: it.ROI, Rank: it.Rank, Followers: it.Followers,
+		CreatedBy: it.CreatedBy,
 	}
 }

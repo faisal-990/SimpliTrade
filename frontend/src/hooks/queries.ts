@@ -12,6 +12,7 @@ import type {
   StockSummary,
   TradeHistoryItem,
   TradeResponse,
+  Trader,
   User,
 } from "@/types/api";
 
@@ -85,6 +86,10 @@ export const useFollowing = () =>
   useQuery({ queryKey: qk.following, queryFn: () => api.get<Investor[]>("/following") });
 
 export const useFeed = () => useQuery({ queryKey: qk.feed, queryFn: () => api.get<FeedItem[]>("/feed") });
+
+// --- social: real-user leaderboard ---
+export const useTraders = () =>
+  useQuery({ queryKey: ["traders"] as const, queryFn: () => api.get<Trader[]>("/traders") });
 
 // --- mutations ---
 interface TradeInput {

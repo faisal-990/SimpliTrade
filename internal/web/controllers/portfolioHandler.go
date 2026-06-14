@@ -93,6 +93,17 @@ func (p *PortfolioHandler) HandleGetUserPortfolioStats(c *gin.Context) {
 	httpx.OK(c, stats)
 }
 
+// HandleTraders returns the social leaderboard of real users ranked by portfolio
+// value.
+func (p *PortfolioHandler) HandleTraders(c *gin.Context) {
+	traders, err := p.service.Traders(c.Request.Context(), atoiDefault(c.Query("limit"), 50))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, traders)
+}
+
 func atoiDefault(s string, def int) int {
 	if s == "" {
 		return def

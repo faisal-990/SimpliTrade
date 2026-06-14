@@ -66,6 +66,9 @@ func InitializeRoutes(
 	api.GET("/following", authMW, investorHandler.HandleGetFollowing)
 	api.GET("/feed", authMW, investorHandler.HandleGetFeed)
 
+	// Social leaderboard of real users (protected).
+	api.GET("/traders", authMW, portfolioHandler.HandleTraders)
+
 	// User-authored ("build your own") investors (protected). Separate path so it
 	// doesn't collide with /investor/:id.
 	customGroup := api.Group("/custom-investors")

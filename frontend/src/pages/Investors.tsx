@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { Trophy, Wand2 } from "lucide-react";
-import { useLeaderboard, useFollowing, useFollow, useUnfollow, useMyInvestors, useDeleteInvestor } from "@/hooks/queries";
+import { Trophy, Wand2, Users as UsersIcon } from "lucide-react";
+import { useLeaderboard, useFollowing, useFollow, useUnfollow, useMyInvestors, useDeleteInvestor, useTraders } from "@/hooks/queries";
 import { InvestorCard } from "@/components/investors/InvestorCard";
 import { Loading, ErrorState, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
+import { initials } from "@/lib/investorMeta";
 import { pct, pnlColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,7 @@ export default function Investors() {
   const follow = useFollow();
   const unfollow = useUnfollow();
   const mine = useMyInvestors();
+  const traders = useTraders();
   const del = useDeleteInvestor();
   const removeMine = (id: string) => {
     if (window.confirm("Delete this investor? Any allocations to it are closed and the cash returned to you. This can't be undone.")) {
@@ -85,32 +87,60 @@ export default function Investors() {
             ))}
           </div>
 
-          {/* Leaderboard side panel */}
-          <aside className="lg:sticky lg:top-7 h-fit rounded-2xl border bg-card p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">Leaderboard</h2>
-            </div>
-            <ol className="space-y-1">
-              {[...data]
-                .sort((a, b) => a.rank - b.rank)
-                .slice(0, 10)
-                .map((inv) => (
-                  <li key={inv.id}>
-                    <Link
-                      to={`/app/investors/${inv.id}`}
-                      className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-accent/50"
-                    >
-                      <span className={cn("w-5 text-center text-xs font-semibold", inv.rank === 1 ? "text-primary" : "text-muted-foreground")}>
-                        {inv.rank}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate">{inv.name}</span>
-                      <span className={cn("tabular-nums text-xs font-medium", pnlColor(inv.roi))}>{pct(inv.roi)}</span>
-                    </Link>
-                  </li>
-                ))}
-            </ol>
-          </aside>
+          {/* Side panels */}
+          <div className="space-y-4 lg:sticky lg:top-7 h-fit">
+            {/* Investor leaderboard */}
+            <aside className="rounded-2xl border bg-card p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold">Investor leaderboard</h2>
+              </div>
+              <ol className="space-y-1">
+                {[...data]
+                  .sort((a, b) => a.rank - b.rank)
+                  .slice(0, 10)
+                  .map((inv) => (
+                    <li key={inv.id}>
+                      <Link
+                        to={`/app/investors/${inv.id}`}
+                        className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-accent/50"
+                      >
+                        <span className={cn("w-5 text-center text-xs font-semibold", inv.rank === 1 ? "text-primary" : "text-muted-foreground")}>
+                          {inv.rank}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">{inv.name}</span>
+                        <span className={cn("tabular-nums text-xs font-medium", pnlColor(inv.roi))}>{pct(inv.roi)}</span>
+                      </Link>
+                    </li>
+                  ))}
+              </ol>
+            </aside>
+
+            {/* Real-user leaderboard */}
+            {!!traders.data?.length && (
+              <aside className="rounded-2xl border bg-card p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <UsersIcon className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold">Top traders</h2>
+                </div>
+                <ol className="space-y-1">
+                  {traders.data.slice(0, 10).map((t) => (
+                    <li key={t.rank} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm">
+                      <span className={cn("w-5 text-center text-xs font-semibold", t.rank === 1 ? "text-primary" : "text-muted-foreground")}>{t.rank}</span>
+                      {t.avatar_url ? (
+                        <img src={t.avatar_url} alt={t.name} className="h-5 w-5 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/12 text-[9px] font-semibold text-primary">{initials(t.name)}</span>
+                      )}
+                      <span className="min-w-0 flex-1 truncate">{t.name}</span>
+                      <span className={cn("tabular-nums text-xs font-medium", pnlColor(t.roi))}>{pct(t.roi)}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-2 text-[11px] text-muted-foreground">Real users ranked by portfolio return.</p>
+              </aside>
+            )}
+          </div>
         </div>
       )}
     </div>

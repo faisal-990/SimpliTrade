@@ -140,6 +140,15 @@ export interface Investor {
   roi: number;
   rank: number;
   followers: number;
+  created_by?: string; // creator's name for user-built investors; empty for presets
+}
+
+export interface Trader {
+  rank: number;
+  name: string;
+  avatar_url: string;
+  value: number;
+  roi: number;
 }
 
 export interface Allocation {

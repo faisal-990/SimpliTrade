@@ -17,6 +17,8 @@ import (
 type PortfolioService interface {
 	Stats(ctx context.Context, accountID string) (*dto.PortfolioStatsDTO, error)
 	Holdings(ctx context.Context, accountID string) ([]dto.HoldingDTO, error)
+	// Traders ranks real users by their portfolio value (the social leaderboard).
+	Traders(ctx context.Context, limit int) ([]dto.TraderDTO, error)
 }
 
 type portfolioService struct {
@@ -25,6 +27,24 @@ type portfolioService struct {
 
 func NewPortfolioService(r repository.PortfolioRepo) PortfolioService {
 	return &portfolioService{repo: r}
+}
+
+func (s *portfolioService) Traders(ctx context.Context, limit int) ([]dto.TraderDTO, error) {
+	rows, err := s.repo.TopTraders(ctx, limit)
+	if err != nil {
+		return nil, httpx.Internal("could not load traders").WithCause(err)
+	}
+	out := make([]dto.TraderDTO, 0, len(rows))
+	for i, r := range rows {
+		out = append(out, dto.TraderDTO{
+			Rank:      i + 1,
+			Name:      r.Name,
+			AvatarURL: r.AvatarURL,
+			Value:     r.Value,
+			ROI:       r.Value/models.StartingSimBalance - 1,
+		})
+	}
+	return out, nil
 }
 
 func (s *portfolioService) Stats(ctx context.Context, accountID string) (*dto.PortfolioStatsDTO, error) {

@@ -9,6 +9,7 @@ type InvestorDTO struct {
 	ROI       float64 `json:"roi"`
 	Rank      int     `json:"rank"`
 	Followers int     `json:"followers"`
+	CreatedBy string  `json:"created_by"` // creator's name for user-built investors; empty for presets
 }
 
 // CreateInvestorRequest is the curated "build your own investor" form. The

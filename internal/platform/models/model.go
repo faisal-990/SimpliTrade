@@ -59,6 +59,11 @@ const (
 	ModeLive AccountMode = "live" // real money (LiveBroker — future)
 )
 
+// StartingSimBalance is the virtual cash a new simulated account begins with.
+// It is the baseline capital ROI is measured against until deposit/withdrawal
+// accounting exists.
+const StartingSimBalance = 100000
+
 // =======================
 // RefreshToken Model
 // =======================

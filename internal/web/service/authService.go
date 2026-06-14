@@ -14,10 +14,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// startingSimBalance is the virtual cash every new user receives in their
-// simulated account.
-const startingSimBalance = 100000
-
 // AuthService implements signup, login, token refresh/rotation, logout, and
 // identity lookup. It returns httpx.AppError values so controllers can render
 // them directly; unexpected failures are wrapped as opaque 500s.
@@ -64,7 +60,7 @@ func (a *authservice) Signup(ctx context.Context, req dto.SignupRequest) (*dto.A
 		Accounts: []models.Account{{
 			Mode:     models.ModeSim,
 			Currency: "USD",
-			Balance:  startingSimBalance,
+			Balance:  models.StartingSimBalance,
 			IsActive: true,
 		}},
 	}

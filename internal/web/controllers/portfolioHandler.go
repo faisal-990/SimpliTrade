@@ -61,14 +61,26 @@ func (p *PortfolioHandler) HandleGetUsersTradeHistory(c *gin.Context) {
 	httpx.OK(c, items)
 }
 
-// HandleGetUsersStockHoldings returns the caller's holdings (T4).
+// HandleGetUsersStockHoldings returns the caller's holdings valued at the
+// current market price.
 func (p *PortfolioHandler) HandleGetUsersStockHoldings(c *gin.Context) {
-	httpx.OK(c, gin.H{"message": "holdings not implemented yet (T4)"})
+	holdings, err := p.service.Holdings(c.Request.Context(), middlewares.AccountID(c))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, holdings)
 }
 
-// HandleGetUserPortfolioStats returns portfolio P&L/ROI (T4).
+// HandleGetUserPortfolioStats returns the account valuation: total value, P&L,
+// ROI, and allocation.
 func (p *PortfolioHandler) HandleGetUserPortfolioStats(c *gin.Context) {
-	httpx.OK(c, gin.H{"message": "portfolio stats not implemented yet (T4)"})
+	stats, err := p.service.Stats(c.Request.Context(), middlewares.AccountID(c))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, stats)
 }
 
 func atoiDefault(s string, def int) int {

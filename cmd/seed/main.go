@@ -24,9 +24,9 @@ func main() {
 		log.Fatalf("❌ db: %v", err)
 	}
 
-	// Provider selection is config-driven; today only the deterministic fake
-	// exists. A real provider drops in here at T9 without touching the seeder.
-	var provider marketdata.Provider = marketdata.NewFakeProvider()
+	// Provider selection is config-driven (fake by default; twelvedata when a
+	// key is set). The seeder is unchanged regardless of source.
+	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey)
 
 	seeder := marketdata.NewSeeder(provider, repository.NewStockRepo(db))
 	n, err := seeder.Seed(context.Background(), marketdata.DefaultUniverse)

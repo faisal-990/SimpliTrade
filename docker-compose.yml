@@ -1,0 +1,68 @@
+# Local stack for running SimpliTrade against a real Postgres.
+#
+# Fastest path to test real data flow:
+#   1) docker compose up -d db          # just Postgres
+#   2) set MARKET_PROVIDER + MARKET_API_KEY in .env
+#   3) make seed                        # pulls real quotes/fundamentals into the DB
+#   4) make run        (Tower 1)  and  make run-engine   (Tower 2)
+#
+# Or run everything in containers: docker compose --profile app up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: simplitrade
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # --- optional: run the towers in containers too (profile "app") ---
+  server:
+    profiles: ["app"]
+    build: .
+    command: ["/app/server"]
+    environment:
+      HOST: db
+      DBUSER: postgres
+      DBPASS: postgres
+      DBNAME: simplitrade
+      DBPORT: "5432"
+      SSLMODE: disable
+      JWT_KEY: ${JWT_KEY:-dev-insecure-jwt-secret-change-me}
+      MARKET_PROVIDER: ${MARKET_PROVIDER:-fake}
+      MARKET_API_KEY: ${MARKET_API_KEY:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  engine:
+    profiles: ["app"]
+    build: .
+    command: ["/app/engine"]
+    environment:
+      HOST: db
+      DBUSER: postgres
+      DBPASS: postgres
+      DBNAME: simplitrade
+      DBPORT: "5432"
+      SSLMODE: disable
+      JWT_KEY: ${JWT_KEY:-dev-insecure-jwt-secret-change-me}
+      MARKET_PROVIDER: ${MARKET_PROVIDER:-fake}
+      MARKET_API_KEY: ${MARKET_API_KEY:-}
+      ENGINE_TICK_INTERVAL: ${ENGINE_TICK_INTERVAL:-60s}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

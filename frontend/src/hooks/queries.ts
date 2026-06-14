@@ -14,6 +14,7 @@ import type {
   TradeHistoryItem,
   TradeResponse,
   Trader,
+  MarketStatus,
   User,
 } from "@/types/api";
 
@@ -94,6 +95,14 @@ export const useFeed = () => useQuery({ queryKey: qk.feed, queryFn: () => api.ge
 // --- social: real-user leaderboard ---
 export const useTraders = () =>
   useQuery({ queryKey: ["traders"] as const, queryFn: () => api.get<Trader[]>("/traders") });
+
+// --- market open/closed status (live banner) ---
+export const useMarketStatus = () =>
+  useQuery({
+    queryKey: ["market-status"] as const,
+    queryFn: () => api.get<MarketStatus>("/market/status"),
+    refetchInterval: 60 * 1000, // re-check each minute so the banner flips at the open/close
+  });
 
 // --- mutations ---
 interface TradeInput {

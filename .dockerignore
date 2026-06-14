@@ -1,0 +1,10 @@
+# Keep the build context small — the Go build only needs source + go.mod.
+.git
+bin/
+frontend/node_modules
+frontend/dist
+node_modules
+*.md
+.env
+.env.*
+!.env.example

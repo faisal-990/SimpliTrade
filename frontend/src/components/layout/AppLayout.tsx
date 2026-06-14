@@ -15,6 +15,7 @@ import {
   LineChart,
 } from "lucide-react";
 import { Brand, LogoMark } from "@/components/Brand";
+import { MarketBanner } from "@/components/layout/MarketBanner";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/common/states";
 import { useAuth } from "@/auth/useAuth";
@@ -159,6 +160,7 @@ export function AppLayout() {
       {/* Content */}
       <main className={cn("transition-[padding] duration-200", collapsed ? "lg:pl-16" : "lg:pl-64")}>
         <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8">
+          <MarketBanner />
           <Outlet />
         </div>
       </main>

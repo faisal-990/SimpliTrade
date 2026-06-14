@@ -29,6 +29,7 @@ func InitializeRoutes(
 	oauthHandler *controllers.OAuthHandler,
 	customInvestorHandler *controllers.CustomInvestorHandler,
 	analyticsHandler *controllers.AnalyticsHandler,
+	marketHandler *controllers.MarketHandler,
 	adminMW gin.HandlerFunc,
 ) {
 	api := router.Group("/api")
@@ -69,6 +70,9 @@ func InitializeRoutes(
 
 	// Social leaderboard of real users (protected).
 	api.GET("/traders", authMW, portfolioHandler.HandleTraders)
+
+	// Market open/closed status for the live banner (protected).
+	api.GET("/market/status", authMW, marketHandler.HandleStatus)
 
 	// User-authored ("build your own") investors (protected). Separate path so it
 	// doesn't collide with /investor/:id.

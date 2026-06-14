@@ -99,6 +99,9 @@ func main() {
 	analyticsservice := service.NewAnalyticsService(traderepo, portfoliorepo, stockrepo)
 	analyticshandler := controllers.NewAnalyticsHandler(analyticsservice)
 
+	// market clock (open/closed banner)
+	markethandler := controllers.NewMarketHandler(runner.NewUSEquityClock())
+
 	// allocations (capped copy-trading sub-accounts)
 	allocationrepo := repository.NewAllocationRepo(db)
 	allocationservice := service.NewAllocationService(allocationrepo)
@@ -137,7 +140,7 @@ func main() {
 	r.GET("/readyz", readyHandler(db))
 	r.GET("/metrics", middlewares.MetricsHandler())
 
-	router.InitializeRoutes(r, authMW, authhandler, dashboardhandler, investorhandler, portfoliohandler, allocationhandler, adminhandler, backtesthandler, oauthhandler, custominvestorhandler, analyticshandler, adminMW)
+	router.InitializeRoutes(r, authMW, authhandler, dashboardhandler, investorhandler, portfoliohandler, allocationhandler, adminhandler, backtesthandler, oauthhandler, custominvestorhandler, analyticshandler, markethandler, adminMW)
 	log.Println("✅ Initialized routes")
 
 	runServer(r, cfg.HTTP.Port)

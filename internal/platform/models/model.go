@@ -116,18 +116,67 @@ type Follow struct {
 // Stock Model
 // =======================
 type Stock struct {
-	ID           uuid.UUID    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Symbol       string       `gorm:"type:varchar(25);not null;uniqueIndex"`
-	Name         string       `gorm:"type:varchar(100);not null"`
-	Exchange     string       `gorm:"type:varchar(50)"`
-	CurrentPrice float64      `gorm:"type:numeric(10,2);not null"`
-	Currency     string       `gorm:"type:varchar(3);default:'USD'"`
+	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Symbol       string    `gorm:"type:varchar(25);not null;uniqueIndex"`
+	Name         string    `gorm:"type:varchar(100);not null"`
+	Exchange     string    `gorm:"type:varchar(50)"`
+	Sector       string    `gorm:"type:varchar(50);index"` // used by strategy universe filters
+	CurrentPrice float64   `gorm:"type:numeric(10,2);not null"`
+	Currency     string    `gorm:"type:varchar(3);default:'USD'"`
+	// Fundamentals is stored as a single JSONB column. The engine loads it
+	// per-stock into memory to evaluate strategies (it does not screen on
+	// individual metrics in SQL), so a JSONB blob beats a wide column table.
+	Fundamentals Fundamentals `gorm:"type:jsonb;serializer:json"`
 	Prices       []StockPrice `gorm:"foreignKey:StockID"`
 	Trades       []Trade      `gorm:"foreignKey:StockID"`
 	Holdings     []Holding    `gorm:"foreignKey:StockID"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
+}
+
+// =======================
+// Fundamentals (value object, JSONB on Stock)
+// =======================
+// Fundamentals is the per-stock metric set the strategy engine evaluates. It is
+// a value object — refreshed periodically by the engine's slow lane and embedded
+// in Stock as JSONB. Field names mirror the strategy schema's metric vocabulary.
+type Fundamentals struct {
+	// Valuation
+	PE            float64 `json:"pe"`
+	ForwardPE     float64 `json:"forward_pe"`
+	PB            float64 `json:"pb"`
+	PS            float64 `json:"ps"`
+	PEG           float64 `json:"peg"`
+	EVEBITDA      float64 `json:"ev_ebitda"`
+	EarningsYield float64 `json:"earnings_yield"` // EBIT/EV
+	FCFYield      float64 `json:"fcf_yield"`
+	DividendYield float64 `json:"dividend_yield"`
+	EPSTTM        float64 `json:"eps_ttm"`
+	BVPS          float64 `json:"bvps"`
+
+	// Quality
+	ROE             float64 `json:"roe"`
+	ROIC            float64 `json:"roic"`
+	GrossMargin     float64 `json:"gross_margin"`
+	OperatingMargin float64 `json:"operating_margin"`
+	NetMargin       float64 `json:"net_margin"`
+	DebtToEquity    float64 `json:"debt_to_equity"`
+	CurrentRatio    float64 `json:"current_ratio"`
+	InterestCover   float64 `json:"interest_coverage"`
+	FCFPositive     bool    `json:"fcf_positive"`
+
+	// Growth
+	RevenueGrowthYoY float64 `json:"revenue_growth_yoy"`
+	EPSGrowthYoY     float64 `json:"eps_growth_yoy"`
+	RevenueCAGR3Y    float64 `json:"revenue_cagr_3y"`
+	EPSGrowth5Y      float64 `json:"eps_growth_5y"`
+
+	// Stability & size
+	EPSPositiveYears int     `json:"eps_positive_years"`
+	DividendYears    int     `json:"dividend_years"`
+	Beta             float64 `json:"beta"`
+	MarketCap        float64 `json:"market_cap"`
 }
 
 // =======================

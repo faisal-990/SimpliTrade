@@ -1,16 +1,15 @@
-.PHONY: build run clean dev
+.PHONY: build run clean watch test test-race cover vet lint tidy check tools
 
+# ---- Build & run ----
 build:
-	@echo "Building Process Starting....."
-	@go build -o bin/app cmd/server/main.go
+	@echo "Building..."
+	@go build -o bin/app ./cmd/server
 	@echo "Build completed."
 
 run:
-	@echo "Run mode starting to compile and run"
-	@go run cmd/server/main.go
+	@go run ./cmd/server
 
 clean:
-	@echo "Cleaning build artifacts ....."
 	@rm -rf ./bin
 	@echo "Build artifacts cleaned"
 
@@ -23,3 +22,34 @@ watch:
 	@echo "Starting Air for hot reload..."
 	@air
 
+# ---- Quality gates (the per-milestone "done bar") ----
+test:
+	@go test ./...
+
+test-race:
+	@go test ./... -race
+
+cover:
+	@go test ./... -coverprofile=coverage.out
+	@go tool cover -func=coverage.out | tail -1
+
+vet:
+	@go vet ./...
+
+lint:
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "golangci-lint not installed — run 'make tools'"; exit 1; \
+	fi
+	@golangci-lint run ./...
+
+tidy:
+	@go mod tidy
+
+# check is the gate that must pass before any milestone is committed.
+check: tidy vet test-race
+	@echo "✅ check passed (tidy + vet + test -race)"
+
+# ---- Dev tooling ----
+tools:
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install go.uber.org/mock/mockgen@latest

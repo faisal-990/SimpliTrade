@@ -1,14 +1,14 @@
+// Command db_test is a manual database health check: it connects, migrates, and
+// round-trips a user + sim account. It requires a live Postgres (via env/.env)
+// and is not part of the automated test suite.
 package main
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
-	"github.com/joho/godotenv"
-
-	// Import your Twin Towers modules
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/config"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/models"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/storage"
@@ -17,72 +17,57 @@ import (
 func main() {
 	fmt.Println("🛠️  Starting Database Health Check...")
 
-	// 1. Load .env (Critical for DB credentials)
-	if err := godotenv.Load(); err != nil {
-		log.Println("⚠️  Warning: No .env file found (relying on system env vars)")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("❌ Failed to load config: %v", err)
 	}
 
-	// 2. Connect to DB (Using your Platform Storage)
-	db, err := storage.Connect()
+	db, err := storage.Connect(cfg.DB)
 	if err != nil {
 		log.Fatalf("❌ Failed to connect to DB: %v", err)
 	}
-	fmt.Println("✅ Database Connected")
+	fmt.Println("✅ Database connected and migrated")
 
-	// 3. AUTO-MIGRATE (Critical: Creates the 'users' table if missing)
-	fmt.Println("🔄 Running AutoMigrate for User model...")
-	if err := db.AutoMigrate(&models.User{}); err != nil {
-		log.Fatalf("❌ Migration Failed: %v", err)
-	}
-	fmt.Println("✅ User Table Migrated")
-
-	// 4. Initialize Repository
 	authRepo := repository.NewAuthRepo(db)
 	ctx := context.Background()
 
-	// 5. TEST: Add a User
 	testEmail := "veryrandomemail@gmail.com"
 
-	// Check if user exists first to avoid duplicate key error
 	existing, _ := authRepo.GetUserByEmail(ctx, testEmail)
 	if existing != nil {
 		fmt.Println("ℹ️  Test user already exists. Skipping creation.")
 	} else {
-		fmt.Println("📝 Creating new test user...")
+		fmt.Println("📝 Creating new test user + sim account...")
 		newUser := &models.User{
-			Name:      "Benjamin Graham",
-			Email:     testEmail,
-			Password:  "securepassword123", // In real app, verify this is hashed!
-			IsActive:  true,
-			Balance:   100000.00,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			Name:          "Benjamin Graham",
+			Email:         testEmail,
+			Password:      "PLACEHOLDER_HASH", // real signup hashes via bcrypt (T1)
+			Role:          "user",
+			IsActive:      true,
+			EmailVerified: true,
+			Accounts: []models.Account{
+				{Mode: models.ModeSim, Currency: "USD", Balance: 100000, IsActive: true},
+			},
 		}
-
-		err = authRepo.AddUser(ctx, newUser)
-		if err != nil {
-			log.Fatalf("❌ AddUser Failed: %v", err)
+		if err := authRepo.AddUser(ctx, newUser); err != nil {
+			log.Fatalf("❌ AddUser failed: %v", err)
 		}
-		fmt.Println("✅ AddUser Success")
+		fmt.Println("✅ AddUser success")
 	}
 
-	// 6. TEST: Fetch the User back
-	fmt.Println("🔍 Verifying data by fetching from DB...")
+	fmt.Println("🔍 Verifying by fetching from DB...")
 	fetchedUser, err := authRepo.GetUserByEmail(ctx, testEmail)
 	if err != nil {
-		log.Fatalf("❌ Fetch Failed: %v", err)
+		log.Fatalf("❌ Fetch failed: %v", err)
 	}
-
 	if fetchedUser == nil {
-		log.Fatalf("❌ Error: User was added but not found!")
+		log.Fatalf("❌ Error: user was added but not found!")
 	}
 
-	// 7. Visual Confirmation
 	fmt.Println("---------------------------------------------------")
-	fmt.Printf("🎉 SUCCESS! User Found in DB:\n")
-	fmt.Printf("UUID:    %v\n", fetchedUser.ID)
-	fmt.Printf("Name:    %s\n", fetchedUser.Name)
-	fmt.Printf("Email:   %s\n", fetchedUser.Email)
-	fmt.Printf("Balance: $%.2f\n", fetchedUser.Balance)
+	fmt.Printf("🎉 SUCCESS! User found in DB:\n")
+	fmt.Printf("UUID:  %v\n", fetchedUser.ID)
+	fmt.Printf("Name:  %s\n", fetchedUser.Name)
+	fmt.Printf("Email: %s\n", fetchedUser.Email)
 	fmt.Println("---------------------------------------------------")
 }

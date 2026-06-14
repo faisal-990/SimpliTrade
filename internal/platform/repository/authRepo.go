@@ -70,5 +70,5 @@ func (a *authRepo) GetUserByID(ctx context.Context, id string) (*models.User, er
 		utils.LogError("failed to get user by id", result.Error)
 		return nil, result.Error
 	}
-	return nil, nil
+	return &user, nil
 }

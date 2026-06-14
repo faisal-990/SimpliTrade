@@ -1,0 +1,54 @@
+schema_version: 2
+
+identity:
+  id: schloss
+  name: "Walter Schloss"
+  firm: "Walter J. Schloss Associates"
+  era: "1955–2002"
+  style: deep_value
+  philosophy: "Buy cheap assets below book value, diversify widely, ignore forecasts, watch the downside."
+  enabled: true
+
+profile:
+  risk_rating: 3
+  volatility: medium
+  time_horizon: long
+  typical_holding_days: 1460
+  tagline: "I'm not very good at judging people. I prefer to look at the numbers."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 200000000
+  market_cap_max: 10000000000
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US]
+  min_positions: 50
+  max_positions: 100
+
+buy:
+  gates:
+    valuation:
+      pb_max: 1.0
+      use_graham_number: false
+    financial_safety:
+      debt_to_equity_max: 0.5
+      net_current_asset_rule: true
+  margin_of_safety_min: 0.35
+  scoring:
+    valuation: 0.60
+    stability: 0.40
+
+sell:
+  take_profit_vs_intrinsic: 1.0
+  stop_loss_pct: null
+  thesis_break:
+    debt_to_equity_above: 1.0
+  max_position_size: 0.04
+
+risk:
+  position_sizing: equal
+  max_position_size: 0.04
+  cash_buffer_min: 0.05
+  rebalance: dynamic
+  leverage_max: 1.0

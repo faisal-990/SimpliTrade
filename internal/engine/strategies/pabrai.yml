@@ -1,0 +1,55 @@
+schema_version: 2
+
+identity:
+  id: pabrai
+  name: "Mohnish Pabrai"
+  firm: "Pabrai Investment Funds"
+  era: "1999–present"
+  style: focused_value
+  philosophy: "Few bets, big bets, infrequent bets — heads I win, tails I don't lose much."
+  enabled: true
+
+profile:
+  risk_rating: 5
+  volatility: high
+  time_horizon: long
+  typical_holding_days: 1460
+  tagline: "Heads, I win; tails, I don't lose much."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 300000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US, GLOBAL]
+  min_positions: 5
+  max_positions: 10
+
+buy:
+  gates:
+    valuation:
+      pe_max: 12
+      fcf_yield_min: 0.08
+      use_graham_number: true
+    financial_safety:
+      debt_to_equity_max: 0.6
+      fcf_positive: true
+  margin_of_safety_min: 0.50
+  scoring:
+    intrinsic: 0.55
+    valuation: 0.45
+
+sell:
+  take_profit_vs_intrinsic: 1.0
+  stop_loss_pct: null
+  thesis_break:
+    debt_to_equity_above: 1.0
+  max_position_size: 0.20
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.20
+  cash_buffer_min: 0.10
+  rebalance: dynamic
+  leverage_max: 1.0

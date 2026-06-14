@@ -1,0 +1,54 @@
+schema_version: 2
+
+identity:
+  id: miller
+  name: "Bill Miller"
+  firm: "Miller Value Partners"
+  era: "1982–present"
+  style: high_conviction_value
+  philosophy: "Value defined by future cash flows, not low multiples — high-conviction tech and crypto contrarianism."
+  enabled: true
+
+profile:
+  risk_rating: 8
+  volatility: high
+  time_horizon: long
+  typical_holding_days: 1460
+  tagline: "Lowest average cost wins."
+
+universe:
+  asset_classes: [equity, crypto]
+  market_cap_min: 1000000000
+  market_cap_max: null
+  sectors_include: [Technology, Consumer Cyclical, Financials]
+  sectors_exclude: []
+  geographies: [US]
+  min_positions: 8
+  max_positions: 20
+
+buy:
+  gates:
+    valuation:
+      fcf_yield_min: 0.03
+      use_graham_number: false
+    growth:
+      revenue_growth_yoy_min: 0.10
+  margin_of_safety_min: 0.20
+  scoring:
+    intrinsic: 0.40
+    growth: 0.35
+    momentum: 0.25
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break:
+    revenue_growth_below: 0.0
+  max_position_size: 0.20
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.20
+  cash_buffer_min: 0.0
+  rebalance: dynamic
+  leverage_max: 1.0

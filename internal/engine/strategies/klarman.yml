@@ -1,0 +1,56 @@
+schema_version: 2
+
+identity:
+  id: klarman
+  name: "Seth Klarman"
+  firm: "The Baupost Group"
+  era: "1982–present"
+  style: absolute_value
+  philosophy: "Absolute-return value with a relentless margin of safety; hold cash when nothing is cheap."
+  enabled: true
+
+profile:
+  risk_rating: 2
+  volatility: low
+  time_horizon: long
+  typical_holding_days: 1825
+  tagline: "Margin of safety is the three most important words in investing."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 500000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US, GLOBAL]
+  min_positions: 8
+  max_positions: 25
+
+buy:
+  gates:
+    valuation:
+      pb_max: 1.5
+      fcf_yield_min: 0.06
+      use_graham_number: true
+    financial_safety:
+      debt_to_equity_max: 0.7
+      fcf_positive: true
+  margin_of_safety_min: 0.40
+  scoring:
+    intrinsic: 0.50
+    valuation: 0.30
+    stability: 0.20
+
+sell:
+  take_profit_vs_intrinsic: 1.0
+  stop_loss_pct: null
+  thesis_break:
+    debt_to_equity_above: 1.5
+  max_position_size: 0.10
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.10
+  cash_buffer_min: 0.30
+  rebalance: dynamic
+  leverage_max: 1.0

@@ -1,0 +1,57 @@
+schema_version: 2
+
+identity:
+  id: livermore
+  name: "Jesse Livermore"
+  firm: "Independent (legendary speculator)"
+  era: "1893–1940"
+  style: trend_momentum
+  philosophy: "Trade the trend, never the fundamentals — pyramid into winners, cut losers fast, sit through the big moves."
+  enabled: true
+
+profile:
+  risk_rating: 10
+  volatility: extreme
+  time_horizon: short
+  typical_holding_days: 60
+  tagline: "It was never my thinking that made the big money for me. It was my sitting."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 1000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US]
+  min_positions: 3
+  max_positions: 8
+
+buy:
+  gates:
+    technical:
+      price_above_sma_days: 50
+      rsi_min: 55
+      near_52w_high_pct: 0.05
+      breakout_required: true
+    momentum:
+      return_3m_min: 0.15
+      relative_strength_min: 80
+  margin_of_safety_min: null
+  scoring:
+    momentum: 0.60
+    technical: 0.40
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: 0.08
+  trailing_stop_pct: 0.12
+  thesis_break:
+    rsi_below: 45
+  max_position_size: 0.30
+
+risk:
+  position_sizing: pyramid
+  max_position_size: 0.30
+  cash_buffer_min: 0.0
+  rebalance: dynamic
+  leverage_max: 1.5

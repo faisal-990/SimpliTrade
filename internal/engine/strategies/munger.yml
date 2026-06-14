@@ -1,0 +1,62 @@
+schema_version: 2
+
+identity:
+  id: munger
+  name: "Charlie Munger"
+  firm: "Berkshire Hathaway / Wesco"
+  era: "1962–2023"
+  style: quality_concentrated
+  philosophy: "A few great businesses bought at fair prices, held with extreme patience and concentration."
+  enabled: true
+
+profile:
+  risk_rating: 4
+  volatility: medium
+  time_horizon: long
+  typical_holding_days: 3650
+  tagline: "The big money is not in the buying and selling, but in the waiting."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 5000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US, GLOBAL]
+  min_positions: 3
+  max_positions: 8
+
+buy:
+  gates:
+    valuation:
+      pe_max: 30
+      fcf_yield_min: 0.03
+      use_graham_number: false
+    quality:
+      roe_min: 0.18
+      roic_min: 0.15
+      gross_margin_min: 0.40
+      require_consistent_margins: true
+    financial_safety:
+      debt_to_equity_max: 1.0
+      fcf_positive: true
+  margin_of_safety_min: 0.15
+  scoring:
+    quality: 0.55
+    intrinsic: 0.30
+    valuation: 0.15
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break:
+    roic_below: 0.10
+    eps_downtrend_years: 4
+  max_position_size: 0.35
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.35
+  cash_buffer_min: 0.10
+  rebalance: none
+  leverage_max: 1.0

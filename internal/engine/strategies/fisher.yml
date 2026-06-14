@@ -1,0 +1,60 @@
+schema_version: 2
+
+identity:
+  id: fisher
+  name: "Philip Fisher"
+  firm: "Fisher & Co."
+  era: "1931–1999"
+  style: growth_quality
+  philosophy: "Find superbly-managed growth companies with long runways and hold for decades."
+  enabled: true
+
+profile:
+  risk_rating: 5
+  volatility: medium
+  time_horizon: long
+  typical_holding_days: 2920
+  tagline: "The stock market is filled with people who know the price of everything, but the value of nothing."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 1000000000
+  market_cap_max: null
+  sectors_include: [Technology, Healthcare, Industrials]
+  sectors_exclude: []
+  geographies: [US]
+  min_positions: 8
+  max_positions: 20
+
+buy:
+  gates:
+    growth:
+      revenue_growth_yoy_min: 0.15
+      revenue_cagr_3y_min: 0.12
+    quality:
+      operating_margin_min: 0.15
+      roe_min: 0.15
+      require_consistent_margins: true
+    valuation:
+      pe_max: 45
+      use_graham_number: false
+  margin_of_safety_min: null
+  scoring:
+    growth: 0.50
+    quality: 0.35
+    valuation: 0.15
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break:
+    revenue_growth_below: 0.08
+    operating_margin_below: 0.10
+  max_position_size: 0.15
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.15
+  cash_buffer_min: 0.05
+  rebalance: none
+  leverage_max: 1.0

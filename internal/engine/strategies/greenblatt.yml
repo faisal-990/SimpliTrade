@@ -1,0 +1,52 @@
+schema_version: 2
+
+identity:
+  id: greenblatt
+  name: "Joel Greenblatt"
+  firm: "Gotham Capital"
+  era: "1985–present"
+  style: quant_value
+  philosophy: "The Magic Formula — rank the market by earnings yield and return on capital, buy the top, rebalance yearly."
+  enabled: true
+
+profile:
+  risk_rating: 4
+  volatility: medium
+  time_horizon: medium
+  typical_holding_days: 365
+  tagline: "Buy good businesses at bargain prices — mechanically."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 1000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: [Financials, Utilities]
+  geographies: [US]
+  min_positions: 20
+  max_positions: 30
+
+buy:
+  gates:
+    valuation:
+      earnings_yield_min: 0.08
+      use_graham_number: false
+    quality:
+      roic_min: 0.20
+  margin_of_safety_min: null
+  scoring:
+    earnings_yield: 0.50
+    quality: 0.50
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break: {}
+  max_position_size: 0.05
+
+risk:
+  position_sizing: equal
+  max_position_size: 0.05
+  cash_buffer_min: 0.0
+  rebalance: annual
+  leverage_max: 1.0

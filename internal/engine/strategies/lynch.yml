@@ -1,0 +1,60 @@
+schema_version: 2
+
+identity:
+  id: lynch
+  name: "Peter Lynch"
+  firm: "Fidelity Magellan Fund"
+  era: "1977–1990"
+  style: garp
+  philosophy: "Growth at a reasonable price — buy what you understand when PEG is below 1."
+  enabled: true
+
+profile:
+  risk_rating: 5
+  volatility: medium
+  time_horizon: medium
+  typical_holding_days: 730
+  tagline: "Know what you own, and know why you own it."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 500000000
+  market_cap_max: 50000000000
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US]
+  min_positions: 15
+  max_positions: 40
+
+buy:
+  gates:
+    valuation:
+      pe_max: 30
+      peg_max: 1.0
+      use_graham_number: false
+    growth:
+      eps_growth_yoy_min: 0.15
+      revenue_growth_yoy_min: 0.10
+    financial_safety:
+      debt_to_equity_max: 0.8
+  margin_of_safety_min: null
+  scoring:
+    growth: 0.45
+    valuation: 0.35
+    quality: 0.20
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break:
+    revenue_growth_below: 0.05
+    eps_downtrend_years: 2
+    debt_to_equity_above: 1.5
+  max_position_size: 0.08
+
+risk:
+  position_sizing: equal
+  max_position_size: 0.08
+  cash_buffer_min: 0.02
+  rebalance: quarterly
+  leverage_max: 1.0

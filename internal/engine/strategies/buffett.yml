@@ -1,0 +1,68 @@
+schema_version: 2
+
+identity:
+  id: buffett
+  name: "Warren Buffett"
+  firm: "Berkshire Hathaway"
+  era: "1962–present"
+  style: quality_value
+  philosophy: "Wonderful companies with durable moats at a fair price, held effectively forever."
+  enabled: true
+
+profile:
+  risk_rating: 3
+  volatility: low
+  time_horizon: long
+  typical_holding_days: 3650
+  tagline: "Our favorite holding period is forever."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 10000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: [Biotechnology]
+  geographies: [US]
+  min_positions: 6
+  max_positions: 15
+
+buy:
+  gates:
+    valuation:
+      pe_max: 25
+      pb_max: 8.0
+      fcf_yield_min: 0.04
+      use_graham_number: false
+    quality:
+      roe_min: 0.15
+      roic_min: 0.12
+      gross_margin_min: 0.35
+      operating_margin_min: 0.15
+      require_consistent_margins: true
+    financial_safety:
+      debt_to_equity_max: 1.0
+      interest_coverage_min: 5.0
+      fcf_positive: true
+    stability:
+      eps_positive_years_min: 8
+  margin_of_safety_min: 0.25
+  scoring:
+    quality: 0.45
+    intrinsic: 0.35
+    valuation: 0.20
+
+sell:
+  take_profit_vs_intrinsic: null
+  stop_loss_pct: null
+  thesis_break:
+    roe_below: 0.10
+    debt_to_equity_above: 2.0
+    eps_downtrend_years: 3
+  max_position_size: 0.25
+
+risk:
+  position_sizing: conviction
+  max_position_size: 0.25
+  cash_buffer_min: 0.10
+  rebalance: dynamic
+  leverage_max: 1.0

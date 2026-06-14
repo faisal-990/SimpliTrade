@@ -1,0 +1,64 @@
+schema_version: 2
+
+identity:
+  id: graham
+  name: "Benjamin Graham"
+  firm: "Graham-Newman Corp."
+  era: "1926–1956"
+  style: deep_value
+  philosophy: "Buy below intrinsic value with a wide margin of safety; diversify; ignore Mr. Market's moods."
+  enabled: true
+
+profile:
+  risk_rating: 2
+  volatility: low
+  time_horizon: long
+  typical_holding_days: 1095
+  tagline: "Price is what you pay; value is what you get."
+
+universe:
+  asset_classes: [equity]
+  market_cap_min: 2000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US]
+  min_positions: 10
+  max_positions: 30
+
+buy:
+  gates:
+    valuation:
+      pe_max: 15
+      pb_max: 1.5
+      pe_pb_max: 22.5
+      use_graham_number: true
+    financial_safety:
+      current_ratio_min: 2.0
+      debt_to_equity_max: 0.5
+      net_current_asset_rule: true
+    stability:
+      eps_positive_years_min: 10
+      dividend_years_min: 20
+  margin_of_safety_min: 0.33
+  scoring:
+    intrinsic: 0.40
+    valuation: 0.20
+    stability: 0.20
+    earnings_yield: 0.20
+
+sell:
+  take_profit_vs_intrinsic: 1.0
+  stop_loss_pct: null
+  thesis_break:
+    debt_to_equity_above: 0.7
+    eps_downtrend_years: 3
+    dividend_cut: true
+  max_position_size: 0.10
+
+risk:
+  position_sizing: equal
+  max_position_size: 0.10
+  cash_buffer_min: 0.05
+  rebalance: annual
+  leverage_max: 1.0

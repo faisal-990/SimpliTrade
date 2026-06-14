@@ -1,0 +1,57 @@
+schema_version: 2
+
+identity:
+  id: marks
+  name: "Howard Marks"
+  firm: "Oaktree Capital"
+  era: "1995–present"
+  style: distressed_contrarian
+  philosophy: "Second-level thinking and cycle awareness — buy quality cheaply when others are forced to sell."
+  enabled: true
+
+profile:
+  risk_rating: 5
+  volatility: medium
+  time_horizon: long
+  typical_holding_days: 1460
+  tagline: "You can't predict. You can prepare."
+
+universe:
+  asset_classes: [equity, bond]
+  market_cap_min: 1000000000
+  market_cap_max: null
+  sectors_include: []
+  sectors_exclude: []
+  geographies: [US, GLOBAL]
+  min_positions: 12
+  max_positions: 30
+
+buy:
+  gates:
+    valuation:
+      pe_max: 13
+      fcf_yield_min: 0.06
+      use_graham_number: false
+    financial_safety:
+      interest_coverage_min: 2.0
+      fcf_positive: true
+  margin_of_safety_min: 0.30
+  scoring:
+    intrinsic: 0.40
+    valuation: 0.40
+    stability: 0.20
+
+sell:
+  take_profit_vs_intrinsic: 1.0
+  stop_loss_pct: null
+  thesis_break:
+    interest_coverage_below: 1.5
+    fcf_positive: false
+  max_position_size: 0.08
+
+risk:
+  position_sizing: volatility_parity
+  max_position_size: 0.08
+  cash_buffer_min: 0.20
+  rebalance: dynamic
+  leverage_max: 1.0

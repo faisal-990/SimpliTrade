@@ -43,6 +43,9 @@ func (f *fakeStockRepo) GetCandles(_ context.Context, sym, _ string, _ int) ([]m
 	return f.candles[sym], nil
 }
 func (f *fakeStockRepo) UpdatePrice(context.Context, string, float64) error { return nil }
+func (f *fakeStockRepo) LatestCloses(context.Context) (map[string]float64, error) {
+	return map[string]float64{}, nil
+}
 
 func newDashboardRouter(repo repository.StockRepo) *gin.Engine {
 	gin.SetMode(gin.TestMode)

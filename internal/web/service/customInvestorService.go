@@ -97,8 +97,6 @@ func (s *customInvestorService) Delete(ctx context.Context, userID, investorID s
 		return nil
 	case errors.Is(err, repository.ErrNotFound):
 		return httpx.NotFound("investor not found, or you didn't create it")
-	case errors.Is(err, repository.ErrInvestorInUse):
-		return httpx.BadRequest("stop your allocations to this investor before deleting it")
 	default:
 		return httpx.Internal("could not delete investor").WithCause(err)
 	}

@@ -9,6 +9,7 @@ import Profile from "@/pages/Profile";
 import Dashboard from "@/pages/Dashboard";
 import StockDetail from "@/pages/StockDetail";
 import Portfolio from "@/pages/Portfolio";
+import Analytics from "@/pages/Analytics";
 import Investors from "@/pages/Investors";
 import InvestorDetail from "@/pages/InvestorDetail";
 import CreateInvestor from "@/pages/CreateInvestor";
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="stock/:symbol" element={<StockDetail />} />
           <Route path="portfolio" element={<Portfolio />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="investors" element={<Investors />} />
           <Route path="investors/new" element={<CreateInvestor />} />
           <Route path="investors/:id" element={<InvestorDetail />} />

@@ -32,13 +32,26 @@ func NewSyntheticTicker(stocks repository.StockRepo, vol float64, seed int64) *S
 	return &SyntheticTicker{stocks: stocks, vol: vol, rng: rand.New(rand.NewSource(seed))}
 }
 
+// reversion is how strongly each step pulls the price back toward its anchor
+// (the seeded daily close). Without this, a plain multiplicative random walk
+// compounds and a few names drift to absurd prices over many cycles.
+const reversion = 0.15
+
 // Refresh applies one market step to every priced stock. It moves the CURRENT
 // price only — it deliberately does NOT append to the daily candle history,
 // because that history is the substrate for charts and backtests and must stay a
-// clean, contiguous record. Moving the current price is enough to revalue
-// positions, shift ROI, and feed the bots' next decision.
+// clean, contiguous record.
+//
+// The step is a mean-reverting (Ornstein–Uhlenbeck-style) walk: a symmetric
+// shock plus a pull back toward the stock's anchor price, then clamped to a band
+// around the anchor. This keeps prices oscillating realistically instead of
+// running away, so ROI and the leaderboard stay sane.
 func (t *SyntheticTicker) Refresh(ctx context.Context) error {
 	stocks, err := t.stocks.List(ctx, 1000, 0)
+	if err != nil {
+		return err
+	}
+	anchors, err := t.stocks.LatestCloses(ctx)
 	if err != nil {
 		return err
 	}
@@ -47,11 +60,19 @@ func (t *SyntheticTicker) Refresh(ctx context.Context) error {
 		if prev <= 0 {
 			continue
 		}
-		// Symmetric proportional gaussian shock (no drift), so prices move both
-		// ways — positions go underwater as well as up, which lets stop-loss and
-		// take-profit sell rules actually trigger. Clamp to keep prices sane.
+		anchor := anchors[s.Symbol]
+		if anchor <= 0 {
+			anchor = prev
+		}
 		shock := t.rng.NormFloat64() * t.vol
-		next := prev * (1 + shock)
+		next := prev + reversion*(anchor-prev) + prev*shock
+		// Keep within a sane band around the anchor.
+		if lo := anchor * 0.4; next < lo {
+			next = lo
+		}
+		if hi := anchor * 2.5; next > hi {
+			next = hi
+		}
 		if next < 0.01 {
 			next = 0.01
 		}

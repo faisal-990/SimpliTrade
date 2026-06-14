@@ -28,6 +28,7 @@ func InitializeRoutes(
 	backtestHandler *controllers.BacktestHandler,
 	oauthHandler *controllers.OAuthHandler,
 	customInvestorHandler *controllers.CustomInvestorHandler,
+	analyticsHandler *controllers.AnalyticsHandler,
 	adminMW gin.HandlerFunc,
 ) {
 	api := router.Group("/api")
@@ -65,6 +66,9 @@ func InitializeRoutes(
 	// Investors the caller follows + their aggregated trade feed (protected).
 	api.GET("/following", authMW, investorHandler.HandleGetFollowing)
 	api.GET("/feed", authMW, investorHandler.HandleGetFeed)
+
+	// Social leaderboard of real users (protected).
+	api.GET("/traders", authMW, portfolioHandler.HandleTraders)
 
 	// User-authored ("build your own") investors (protected). Separate path so it
 	// doesn't collide with /investor/:id.
@@ -110,6 +114,7 @@ func InitializeRoutes(
 	{
 		portfolioGroup.GET("/stats", portfolioHandler.HandleGetUserPortfolioStats)
 		portfolioGroup.GET("/", portfolioHandler.HandleGetUsersStockHoldings)
+		portfolioGroup.GET("/analytics", analyticsHandler.HandleAnalytics)
 	}
 
 	// Dashboard routes (public — market data is not user-specific).

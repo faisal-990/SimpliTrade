@@ -140,6 +140,43 @@ export interface Investor {
   roi: number;
   rank: number;
   followers: number;
+  created_by?: string; // creator's name for user-built investors; empty for presets
+}
+
+export interface AnalyticsPoint {
+  date: number;
+  value: number;
+}
+
+export interface SectorSlice {
+  sector: string;
+  value: number;
+  pct: number;
+}
+
+export interface Analytics {
+  start_value: number;
+  current_value: number;
+  roi: number;
+  max_drawdown: number;
+  volatility: number;
+  sharpe: number;
+  win_rate: number;
+  trade_count: number;
+  best_day: number;
+  worst_day: number;
+  equity: AnalyticsPoint[];
+  benchmark: AnalyticsPoint[];
+  sectors: SectorSlice[];
+  benchmark_name: string;
+}
+
+export interface Trader {
+  rank: number;
+  name: string;
+  avatar_url: string;
+  value: number;
+  roi: number;
 }
 
 export interface Allocation {

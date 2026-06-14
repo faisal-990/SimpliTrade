@@ -20,6 +20,7 @@ type InvestorSummary struct {
 	ROI       float64 `gorm:"column:roi"`
 	Rank      int     `gorm:"column:rank"`
 	Followers int     `gorm:"column:followers"`
+	CreatedBy string  `gorm:"column:created_by"` // empty for presets; creator name for custom
 }
 
 // InvestorRepo reads the bot investors, their trades, and the follow graph.
@@ -51,7 +52,9 @@ const investorSelect = `investors.id AS id, users.name AS name, investors.bio AS
 	investors.strategy AS strategy,
 	COALESCE(performances.roi, 0) AS roi,
 	COALESCE(performances.rank, 1000000) AS rank,
-	(SELECT COUNT(*) FROM follows WHERE follows.investor_id = investors.id) AS followers`
+	(SELECT COUNT(*) FROM follows WHERE follows.investor_id = investors.id) AS followers,
+	(SELECT cu.name FROM custom_strategies cst JOIN users cu ON cu.id = cst.user_id
+		WHERE cst.investor_id = investors.id LIMIT 1) AS created_by`
 
 func (r *investorRepo) baseQuery(ctx context.Context) *gorm.DB {
 	return r.DB.WithContext(ctx).

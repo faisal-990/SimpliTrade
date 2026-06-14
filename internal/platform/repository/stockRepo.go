@@ -26,6 +26,10 @@ type StockRepo interface {
 
 	// UpdatePrice sets a stock's current price (used by the engine market poller).
 	UpdatePrice(ctx context.Context, symbol string, price float64) error
+
+	// LatestCloses returns each symbol's most recent daily close — a stable
+	// "anchor" the synthetic ticker mean-reverts toward so prices can't run away.
+	LatestCloses(ctx context.Context) (map[string]float64, error)
 }
 
 type stockRepo struct {
@@ -99,6 +103,30 @@ func (r *stockRepo) UpdatePrice(ctx context.Context, symbol string, price float6
 		Model(&models.Stock{}).
 		Where("symbol = ?", symbol).
 		Update("current_price", price).Error
+}
+
+func (r *stockRepo) LatestCloses(ctx context.Context) (map[string]float64, error) {
+	type row struct {
+		Symbol string
+		Close  float64
+	}
+	var rows []row
+	// DISTINCT ON keeps the newest 1d bar per symbol.
+	err := r.DB.WithContext(ctx).
+		Raw(`SELECT DISTINCT ON (s.symbol) s.symbol AS symbol, sp.close AS close
+		     FROM stock_prices sp JOIN stocks s ON s.id = sp.stock_id
+		     WHERE sp.interval = '1d'
+		     ORDER BY s.symbol, sp.timestamp DESC`).
+		Scan(&rows).Error
+	if err != nil {
+		utils.LogError("repo: latest closes", err)
+		return nil, err
+	}
+	out := make(map[string]float64, len(rows))
+	for _, r := range rows {
+		out[r.Symbol] = r.Close
+	}
+	return out, nil
 }
 
 func (r *stockRepo) GetCandles(ctx context.Context, symbol, interval string, limit int) ([]models.StockPrice, error) {

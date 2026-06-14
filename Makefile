@@ -1,13 +1,22 @@
-.PHONY: build run clean watch test test-race cover vet lint tidy check tools
+.PHONY: build run run-engine seed clean watch test test-race cover vet lint tidy check tools
 
 # ---- Build & run ----
 build:
 	@echo "Building..."
-	@go build -o bin/app ./cmd/server
+	@go build -o bin/server ./cmd/server
+	@go build -o bin/engine ./cmd/engine
 	@echo "Build completed."
 
 run:
 	@go run ./cmd/server
+
+# Run Tower 2 (the strategy engine daemon).
+run-engine:
+	@go run ./cmd/engine
+
+# Seed the stock universe (run before the engine on a fresh DB).
+seed:
+	@go run ./cmd/seed
 
 clean:
 	@rm -rf ./bin

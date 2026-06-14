@@ -75,7 +75,7 @@ func main() {
 		runner.NewPerformanceStore(perfRepo),
 		bots,
 		logger,
-	).WithRefresher(runner.NewDBRefresher(provider, stockRepo, marketdata.Symbols()))
+	).WithRefresher(runner.NewDBRefresher(provider, stockRepo))
 
 	r.Run(ctx, cfg.Engine.TickInterval)
 }

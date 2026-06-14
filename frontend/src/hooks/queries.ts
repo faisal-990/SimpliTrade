@@ -103,6 +103,20 @@ export function useTrade(side: "buy" | "sell") {
   });
 }
 
+// --- password reset (public, OTP via email) ---
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (email: string) => api.post("/auth/forgot-password", { email }),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (input: { email: string; code: string; password: string }) =>
+      api.post("/auth/reset-password", input),
+  });
+}
+
 // --- dev / admin controls ---
 export function useSimulateMarket() {
   const qc = useQueryClient();

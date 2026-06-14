@@ -15,6 +15,7 @@ import (
 	"github.com/faisal-990/ProjectInvestApp/internal/engine/strategy"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/auth"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/config"
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/mailer"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/models"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/storage"
@@ -48,7 +49,11 @@ func main() {
 	// loading all the layers
 	// auth
 	authrepo := repository.NewAuthRepo(db)
-	authservice := service.NewAuthService(authrepo, tokenManager)
+	mail := mailer.New(mailer.SMTPConfig{
+		Host: cfg.Mail.Host, Port: cfg.Mail.Port,
+		Username: cfg.Mail.Username, Password: cfg.Mail.Password, From: cfg.Mail.From,
+	})
+	authservice := service.NewAuthService(authrepo, tokenManager, mail, cfg.HTTP.AppBaseURL)
 	authhandler := controllers.NewAuthHandler(authservice)
 
 	// News

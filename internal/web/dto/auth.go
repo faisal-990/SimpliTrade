@@ -19,6 +19,18 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+// ForgotPasswordRequest is the body for POST /auth/forgot-password.
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// ResetPasswordRequest is the body for POST /auth/reset-password.
+type ResetPasswordRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Code     string `json:"code" binding:"required,len=6"`            // 6-digit OTP
+	Password string `json:"password" binding:"required,min=8,max=72"` // 72 = bcrypt limit
+}
+
 // UserDTO is the client-safe projection of a user (never includes the password
 // hash).
 type UserDTO struct {

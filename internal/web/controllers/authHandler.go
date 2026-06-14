@@ -76,6 +76,36 @@ func (a *AuthHandler) HandleAuthLogout(c *gin.Context) {
 	httpx.OK(c, gin.H{"logged_out": true})
 }
 
+// HandleForgotPassword issues a password-reset link. It always returns the same
+// generic success, whether or not the email is registered, so it can't be used
+// to discover which emails have accounts.
+func (a *AuthHandler) HandleForgotPassword(c *gin.Context) {
+	var req dto.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Fail(c, httpx.Validation("invalid request: "+err.Error()))
+		return
+	}
+	if err := a.service.ForgotPassword(c.Request.Context(), req.Email); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"message": "if an account exists for that email, a reset link has been sent"})
+}
+
+// HandleResetPassword consumes a reset token and sets a new password.
+func (a *AuthHandler) HandleResetPassword(c *gin.Context) {
+	var req dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Fail(c, httpx.Validation("invalid request: "+err.Error()))
+		return
+	}
+	if err := a.service.ResetPassword(c.Request.Context(), req.Email, req.Code, req.Password); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"message": "password updated — you can now sign in"})
+}
+
 // HandleAuthForMe returns the authenticated caller's profile.
 func (a *AuthHandler) HandleAuthForMe(c *gin.Context) {
 	user, err := a.service.Me(c.Request.Context(), middlewares.UserID(c))

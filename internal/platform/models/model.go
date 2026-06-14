@@ -93,6 +93,20 @@ type RefreshToken struct {
 	CreatedAt time.Time
 }
 
+// PasswordReset is a single-use, time-limited one-time passcode (OTP) for
+// resetting a forgotten password. Only the bcrypt hash of the 6-digit code is
+// stored, so a DB leak can't reveal the code; the plaintext is emailed only.
+// Attempts caps brute-force guesses against the short code.
+type PasswordReset struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	CodeHash  string    `gorm:"type:varchar(72);not null"` // bcrypt of the OTP
+	Attempts  int       `gorm:"not null;default:0"`        // failed verifications so far
+	ExpiresAt time.Time `gorm:"not null;index"`
+	UsedAt    *time.Time // set once the code is consumed — enforces single use
+	CreatedAt time.Time
+}
+
 // =======================
 // Performance Summary Model
 // =======================

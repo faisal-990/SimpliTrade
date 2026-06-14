@@ -23,6 +23,7 @@ const (
 	CodeForbidden    Code = "forbidden"
 	CodeNotFound     Code = "not_found"
 	CodeConflict     Code = "conflict"
+	CodeRateLimited  Code = "rate_limited"
 	CodeInternal     Code = "internal_error"
 )
 
@@ -72,6 +73,9 @@ func Unauthorized(msg string) *AppError {
 func Forbidden(msg string) *AppError { return newAppError(CodeForbidden, http.StatusForbidden, msg) }
 func NotFound(msg string) *AppError  { return newAppError(CodeNotFound, http.StatusNotFound, msg) }
 func Conflict(msg string) *AppError  { return newAppError(CodeConflict, http.StatusConflict, msg) }
+func TooManyRequests(msg string) *AppError {
+	return newAppError(CodeRateLimited, http.StatusTooManyRequests, msg)
+}
 func Internal(msg string) *AppError {
 	return newAppError(CodeInternal, http.StatusInternalServerError, msg)
 }

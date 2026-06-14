@@ -1,9 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"log"
 	"log/slog"
+	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/faisal-990/ProjectInvestApp/internal/broker"
@@ -18,6 +22,7 @@ import (
 	"github.com/faisal-990/ProjectInvestApp/internal/web/router"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/service"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -68,20 +73,65 @@ func main() {
 	portfoliohandler := controllers.NewPortfolioHandler(portfolioservice, tradeservice)
 
 	utils.LogInfo("modules loaded, starting Gin engine")
-	r := gin.Default()
+	// gin.New (not Default) so we control the middleware stack explicitly.
+	r := gin.New()
+	r.Use(
+		middlewares.Recovery(),  // panics -> clean 500
+		middlewares.RequestID(), // correlation id
+		middlewares.AccessLog(), // structured per-request log
+		middlewares.SecurityHeaders(),
+		middlewares.CORSMiddleware(cfg.HTTP.AllowedOrigins),
+		middlewares.Metrics(), // RED metrics
+		middlewares.RateLimit(cfg.HTTP.RateLimitRPS, cfg.HTTP.RateLimitBurst),
+	)
 
-	r.Use(middlewares.CORSMiddleware())
+	// Infra probes + metrics (unversioned, conventional paths).
+	r.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
+	r.GET("/readyz", readyHandler(db))
+	r.GET("/metrics", middlewares.MetricsHandler())
 
 	router.InitializeRoutes(r, authMW, authhandler, dashboardhandler, investorhandler, portfoliohandler)
-
 	log.Println("✅ Initialized routes")
 
-	port := cfg.HTTP.Port
-	fmt.Println("*****************************")
-	fmt.Printf("STARTING SERVER AT:%s\n", time.Now())
-	fmt.Println("*****************************")
-	log.Printf("🚀 Server running at :%s", port)
-	if err := r.Run(":" + port); err != nil {
-		log.Fatalf("❌ Failed to start server: %s", err)
+	runServer(r, cfg.HTTP.Port)
+}
+
+// readyHandler reports readiness by pinging the database — load balancers use
+// this to decide whether to route traffic to the instance.
+func readyHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		sqlDB, err := db.DB()
+		if err == nil {
+			err = sqlDB.PingContext(c.Request.Context())
+		}
+		if err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
+	}
+}
+
+// runServer starts the HTTP server and shuts it down gracefully on SIGINT/SIGTERM,
+// draining in-flight requests within a timeout.
+func runServer(handler http.Handler, port string) {
+	srv := &http.Server{Addr: ":" + port, Handler: handler}
+
+	go func() {
+		log.Printf("🚀 Server running at :%s", port)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("❌ Failed to start server: %s", err)
+		}
+	}()
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	<-ctx.Done()
+
+	log.Println("shutting down server...")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("graceful shutdown failed: %s", err)
 	}
 }

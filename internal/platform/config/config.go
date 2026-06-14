@@ -38,7 +38,10 @@ type Config struct {
 }
 
 type HTTPConfig struct {
-	Port string
+	Port           string
+	AllowedOrigins []string // CORS allowlist ("*" in dev)
+	RateLimitRPS   int      // per-IP requests/second (0 = disabled)
+	RateLimitBurst int      // per-IP burst allowance
 }
 
 type DBConfig struct {
@@ -97,7 +100,10 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Env: env,
 		HTTP: HTTPConfig{
-			Port: getString("PORT", "8080"),
+			Port:           getString("PORT", "8080"),
+			AllowedOrigins: getStringSlice("CORS_ALLOWED_ORIGINS", []string{"*"}),
+			RateLimitRPS:   getInt("RATE_LIMIT_RPS", 20),
+			RateLimitBurst: getInt("RATE_LIMIT_BURST", 40),
 		},
 		DB: DBConfig{
 			Host:     getString("HOST", "localhost"),
@@ -157,6 +163,25 @@ func getString(key, def string) string {
 		return v
 	}
 	return def
+}
+
+// getStringSlice reads a comma-separated env var into a slice, trimming spaces.
+func getStringSlice(key string, def []string) []string {
+	v, ok := os.LookupEnv(key)
+	if !ok || v == "" {
+		return def
+	}
+	parts := strings.Split(v, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	if len(out) == 0 {
+		return def
+	}
+	return out
 }
 
 func getInt(key string, def int) int {

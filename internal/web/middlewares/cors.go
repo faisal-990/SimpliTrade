@@ -7,16 +7,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CORSMiddleware() gin.HandlerFunc {
+// CORSMiddleware builds CORS from a configured allowlist. Passing ["*"] allows
+// any origin (dev); in prod, pass the real frontend origins. Credentials are
+// only allowed when the origin is explicitly listed (the CORS spec forbids
+// credentials with a "*" origin).
+func CORSMiddleware(allowedOrigins []string) gin.HandlerFunc {
+	allowAll := len(allowedOrigins) == 1 && allowedOrigins[0] == "*"
 	return cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"http://localhost:5174",
-		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
-		AllowCredentials: true,
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "X-Request-ID"},
+		ExposeHeaders:    []string{"X-Request-ID"},
+		AllowCredentials: !allowAll,
 		MaxAge:           12 * time.Hour,
 	})
-
 }

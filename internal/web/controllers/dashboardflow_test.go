@@ -37,7 +37,7 @@ func (f *fakeStockRepo) List(_ context.Context, limit, offset int) ([]models.Sto
 	}
 	return out, nil
 }
-func (f *fakeStockRepo) ListSymbols(context.Context) ([]string, error) { return nil, nil }
+func (f *fakeStockRepo) ListSymbols(context.Context) ([]string, error)          { return nil, nil }
 func (f *fakeStockRepo) InsertCandle(context.Context, *models.StockPrice) error { return nil }
 func (f *fakeStockRepo) GetCandles(_ context.Context, sym, _ string, _ int) ([]models.StockPrice, error) {
 	return f.candles[sym], nil

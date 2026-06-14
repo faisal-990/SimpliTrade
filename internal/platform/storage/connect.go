@@ -20,6 +20,7 @@ func Models() []any {
 		&models.User{},
 		&models.Account{},
 		&models.RefreshToken{},
+		&models.PasswordReset{},
 		&models.Investor{},
 		&models.Performance{},
 		&models.Stock{},

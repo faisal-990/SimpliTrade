@@ -106,6 +106,18 @@ func (m *TokenManager) GenerateRefreshToken() (RefreshToken, error) {
 	}, nil
 }
 
+// NewOpaqueToken mints a cryptographically-random opaque token and its storable
+// SHA-256 hash. Used for one-off secrets like password-reset links, where the
+// plaintext is delivered out-of-band (email) and only the hash is persisted.
+func NewOpaqueToken() (plaintext, hash string, err error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", "", err
+	}
+	plaintext = hex.EncodeToString(b)
+	return plaintext, HashToken(plaintext), nil
+}
+
 // HashToken returns the SHA-256 hex digest used to store/look up refresh tokens.
 // Refresh tokens are high-entropy random values, so a fast hash is appropriate
 // (unlike passwords, which require bcrypt).

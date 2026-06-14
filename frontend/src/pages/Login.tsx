@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,6 +29,8 @@ export default function Login() {
   const [formError, setFormError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const justReset = (location.state as { reset?: boolean } | null)?.reset === true;
 
   const {
     register,
@@ -94,6 +96,12 @@ export default function Login() {
             <p className="mt-1.5 text-sm text-muted-foreground">Sign in to your simulated portfolio.</p>
           </div>
 
+          {justReset && !formError && (
+            <div className="mb-5 rounded-lg border border-gain/30 bg-gain/10 px-3 py-2 text-sm text-gain">
+              Password updated — sign in with your new password.
+            </div>
+          )}
+
           {formError && (
             <div className="mb-5 rounded-lg border border-loss/30 bg-loss/10 px-3 py-2 text-sm text-loss">
               {formError}
@@ -113,7 +121,7 @@ export default function Login() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link to="#" className="text-xs font-medium text-primary hover:underline">Forgot password?</Link>
+                <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">Forgot password?</Link>
               </div>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

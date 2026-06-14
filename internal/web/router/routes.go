@@ -39,6 +39,8 @@ func InitializeRoutes(
 		authGroup.POST("/login", authHandler.HandleAuthLogin)
 		authGroup.POST("/refresh", authHandler.HandleAuthRefresh)
 		authGroup.POST("/logout", authHandler.HandleAuthLogout)
+		authGroup.POST("/forgot-password", authHandler.HandleForgotPassword)
+		authGroup.POST("/reset-password", authHandler.HandleResetPassword)
 		authGroup.GET("/me", authMW, authHandler.HandleAuthForMe)
 	}
 

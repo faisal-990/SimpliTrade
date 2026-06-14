@@ -90,9 +90,18 @@ func pricePath(symbol string, a archetype, progress float64) float64 {
 	return round2(base * mult * wig)
 }
 
+// intradayWiggle is a small (<0.5%) deterministic oscillation keyed to the time
+// of day, so quotes move through the session — the underlying price paths are
+// daily, this animates them intraday for a realistic live feel.
+func intradayWiggle(symbol string, t time.Time) float64 {
+	mins := float64(t.Hour()*60 + t.Minute())
+	return 1 + 0.004*math.Sin(mins/47+float64(seed(symbol)%13))
+}
+
 func (f *FakeProvider) Quote(_ context.Context, symbol string) (Quote, error) {
 	a := archetypeOf(symbol)
-	price := pricePath(symbol, a, 1) // "now"
+	now := f.now()
+	price := round2(pricePath(symbol, a, 1) * intradayWiggle(symbol, now)) // "now", animated intraday
 	prev := pricePath(symbol, a, 0.997)
 	high := round2(math.Max(price, prev) * 1.004)
 	low := round2(math.Min(price, prev) * 0.996)

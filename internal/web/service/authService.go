@@ -6,12 +6,20 @@ import (
 	"time"
 
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/auth"
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/mailer"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/models"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/utils"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/dto"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/httpx"
 	"github.com/google/uuid"
+)
+
+const (
+	// passwordResetTTL is how long a reset code stays valid.
+	passwordResetTTL = 10 * time.Minute
+	// maxResetAttempts caps wrong-code guesses before the code is burned.
+	maxResetAttempts = 5
 )
 
 // AuthService implements signup, login, token refresh/rotation, logout, and
@@ -23,15 +31,23 @@ type AuthService interface {
 	Refresh(ctx context.Context, refreshToken string) (*dto.AuthResponse, error)
 	Logout(ctx context.Context, refreshToken string) error
 	Me(ctx context.Context, userID string) (*dto.UserDTO, error)
+	// ForgotPassword emails a one-time code to the address if an active account
+	// exists. It never reveals whether the email is registered (no enumeration).
+	ForgotPassword(ctx context.Context, email string) error
+	// ResetPassword verifies the emailed code for the address and sets a new
+	// password.
+	ResetPassword(ctx context.Context, email, code, newPassword string) error
 }
 
 type authservice struct {
-	repo   repository.AuthRepo
-	tokens *auth.TokenManager
+	repo       repository.AuthRepo
+	tokens     *auth.TokenManager
+	mailer     mailer.Mailer
+	appBaseURL string
 }
 
-func NewAuthService(r repository.AuthRepo, tm *auth.TokenManager) AuthService {
-	return &authservice{repo: r, tokens: tm}
+func NewAuthService(r repository.AuthRepo, tm *auth.TokenManager, m mailer.Mailer, appBaseURL string) AuthService {
+	return &authservice{repo: r, tokens: tm, mailer: m, appBaseURL: appBaseURL}
 }
 
 func (a *authservice) Signup(ctx context.Context, req dto.SignupRequest) (*dto.AuthResponse, error) {
@@ -143,6 +159,95 @@ func (a *authservice) Logout(ctx context.Context, refreshToken string) error {
 	}
 	if err := a.repo.RevokeRefreshToken(ctx, rt.ID, time.Now()); err != nil {
 		return httpx.Internal("could not log out").WithCause(err)
+	}
+	return nil
+}
+
+func (a *authservice) ForgotPassword(ctx context.Context, email string) error {
+	user, err := a.repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil // never reveal whether the email is registered
+		}
+		return httpx.Internal("could not process request").WithCause(err)
+	}
+	if !user.IsActive || user.IsBot {
+		return nil // bots and disabled accounts can't reset
+	}
+
+	code, err := auth.NewOTP()
+	if err != nil {
+		return httpx.Internal("could not create reset code").WithCause(err)
+	}
+	codeHash, err := auth.HashPassword(code) // bcrypt — verified by comparison, never looked up
+	if err != nil {
+		return httpx.Internal("could not secure reset code").WithCause(err)
+	}
+
+	// Retire any outstanding code first, so only the newest one works.
+	if err := a.repo.InvalidateUserPasswordResets(ctx, user.ID, time.Now()); err != nil {
+		return httpx.Internal("could not create reset code").WithCause(err)
+	}
+	if err := a.repo.CreatePasswordReset(ctx, &models.PasswordReset{
+		UserID:    user.ID,
+		CodeHash:  codeHash,
+		ExpiresAt: time.Now().Add(passwordResetTTL),
+	}); err != nil {
+		return httpx.Internal("could not create reset code").WithCause(err)
+	}
+
+	if err := a.mailer.SendPasswordResetCode(ctx, user.Email, code, int(passwordResetTTL.Minutes())); err != nil {
+		// Best-effort: a delivery failure must not leak that the email exists.
+		utils.LogError("auth: send reset code", err)
+	}
+	return nil
+}
+
+func (a *authservice) ResetPassword(ctx context.Context, email, code, newPassword string) error {
+	// Generic error for every failure mode, so the endpoint reveals nothing about
+	// which emails exist or whether a code is outstanding.
+	const generic = "invalid or expired code"
+
+	user, err := a.repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return httpx.BadRequest(generic)
+		}
+		return httpx.Internal("could not reset password").WithCause(err)
+	}
+
+	pr, err := a.repo.GetActivePasswordReset(ctx, user.ID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return httpx.BadRequest(generic)
+		}
+		return httpx.Internal("could not reset password").WithCause(err)
+	}
+	if time.Now().After(pr.ExpiresAt) || pr.Attempts >= maxResetAttempts {
+		_ = a.repo.MarkPasswordResetUsed(ctx, pr.ID, time.Now()) // burn it
+		return httpx.BadRequest(generic)
+	}
+	if !auth.VerifyPassword(pr.CodeHash, code) {
+		if err := a.repo.IncrementPasswordResetAttempts(ctx, pr.ID); err != nil {
+			utils.LogError("auth: bump reset attempts", err)
+		}
+		return httpx.BadRequest(generic)
+	}
+
+	hash, err := auth.HashPassword(newPassword)
+	if err != nil {
+		return httpx.Internal("could not secure password").WithCause(err)
+	}
+	if err := a.repo.UpdateUserPassword(ctx, user.ID, hash); err != nil {
+		return httpx.Internal("could not update password").WithCause(err)
+	}
+	// Single-use: consume the code so it can't be replayed.
+	if err := a.repo.MarkPasswordResetUsed(ctx, pr.ID, time.Now()); err != nil {
+		utils.LogError("auth: mark reset used", err)
+	}
+	// Security: kill every existing session so a pre-reset leak can't persist.
+	if err := a.repo.RevokeAllRefreshTokens(ctx, user.ID, time.Now()); err != nil {
+		utils.LogError("auth: revoke sessions after reset", err)
 	}
 	return nil
 }

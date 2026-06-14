@@ -16,19 +16,23 @@ const (
 // vendor — so adding a new provider is one new Provider implementation plus a
 // case here, with no other code changes.
 //
-// Real providers are wrapped in a CachingProvider to respect free-tier quotas.
-// If a real provider is selected without a key, we fall back to the deterministic
-// FakeProvider so the app always boots.
-func NewProvider(name, apiKey string) Provider {
+// A real provider is wrapped throttle→cache: the throttle (ratePerMin) keeps
+// upstream calls under the free-tier limit; the cache (outer) serves repeats
+// without waiting. If a real provider is selected without a key, we fall back to
+// the deterministic FakeProvider so the app always boots.
+func NewProvider(name, apiKey string, ratePerMin int) Provider {
 	switch name {
 	case "twelvedata":
 		if apiKey == "" {
 			return NewFakeProvider()
 		}
-		real := NewTwelveDataProvider(apiKey, "", nil)
-		return NewCachingProvider(real, quoteCacheTTL, fundCacheTTL, candleCacheTTL)
-	// case "finnhub": return NewCachingProvider(NewFinnhubProvider(apiKey, "", nil), ...)
-	// case "fmp":     return NewCachingProvider(NewFMPProvider(apiKey, "", nil), ...)
+		var inner Provider = NewTwelveDataProvider(apiKey, "", nil)
+		if ratePerMin > 0 {
+			inner = NewThrottledProvider(inner, time.Minute/time.Duration(ratePerMin))
+		}
+		return NewCachingProvider(inner, quoteCacheTTL, fundCacheTTL, candleCacheTTL)
+	// case "finnhub": ...
+	// case "fmp":     ...
 	default:
 		return NewFakeProvider()
 	}

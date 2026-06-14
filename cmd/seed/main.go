@@ -33,7 +33,7 @@ func main() {
 
 	// Provider selection is config-driven (fake by default; twelvedata when a
 	// key is set). The seeder is unchanged regardless of source.
-	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey)
+	provider := marketdata.NewProvider(cfg.Market.Provider, cfg.Market.APIKey, cfg.Market.RatePerMin)
 
 	universe := marketdata.DefaultUniverse
 	if limit := seedLimit(); limit > 0 && limit < len(universe) {

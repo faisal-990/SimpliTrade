@@ -66,8 +66,9 @@ type AuthConfig struct {
 }
 
 type MarketConfig struct {
-	Provider string // "fake" until a real provider is wired in
-	APIKey   string
+	Provider   string // "fake" until a real provider is wired in
+	APIKey     string
+	RatePerMin int // max upstream calls/min (free tiers are tiny); 0 = unlimited
 }
 
 // EngineConfig governs the strategy daemon (Tower 2).
@@ -113,8 +114,9 @@ func Load() (*Config, error) {
 			RefreshTokenTTL: getDuration("REFRESH_TOKEN_TTL", 720*time.Hour), // 30 days
 		},
 		Market: MarketConfig{
-			Provider: getString("MARKET_PROVIDER", "fake"),
-			APIKey:   getString("MARKET_API_KEY", ""),
+			Provider:   getString("MARKET_PROVIDER", "fake"),
+			APIKey:     getString("MARKET_API_KEY", ""),
+			RatePerMin: getInt("MARKET_RATE_PER_MIN", 8), // Twelve Data free tier
 		},
 		Engine: EngineConfig{
 			TickInterval:  getDuration("ENGINE_TICK_INTERVAL", 60*time.Second),
@@ -153,6 +155,17 @@ func (c *Config) IsProd() bool { return c.Env == EnvProd }
 func getString(key, def string) string {
 	if v, ok := os.LookupEnv(key); ok && v != "" {
 		return v
+	}
+	return def
+}
+
+func getInt(key string, def int) int {
+	v, ok := os.LookupEnv(key)
+	if !ok || v == "" {
+		return def
+	}
+	if n, err := strconv.Atoi(v); err == nil {
+		return n
 	}
 	return def
 }

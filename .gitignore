@@ -40,6 +40,11 @@ devlog.md
 db_comments.md
 data/
 
+# --- Local-only design docs (kept out of the repo) ---
+/ARCHITECTURE.md
+/BACKEND_PLAN.md
+/internal/engine/strategies/SCHEMA.md
+
 # --- Editor/IDE ---
 .vscode/
 .idea/

@@ -44,6 +44,25 @@ func NewUSEquityClock() *USEquityClock {
 	return &USEquityClock{loc: loc, holidays: h}
 }
 
+// Status reports whether the market is open at t and the time of the next
+// transition (today's 16:00 close if open; the next session's 09:30 open if
+// closed). nextChange is zero only if no open day is found within ~10 days.
+func (c *USEquityClock) Status(t time.Time) (open bool, nextChange time.Time) {
+	open = c.IsOpen(t)
+	et := t.In(c.loc)
+	if open {
+		return true, time.Date(et.Year(), et.Month(), et.Day(), 16, 0, 0, 0, c.loc)
+	}
+	for i := 0; i <= 10; i++ {
+		d := et.AddDate(0, 0, i)
+		o := time.Date(d.Year(), d.Month(), d.Day(), 9, 30, 0, 0, c.loc)
+		if o.After(t) && c.IsOpen(o) {
+			return false, o
+		}
+	}
+	return false, time.Time{}
+}
+
 // IsOpen reports whether t falls in the regular cash session.
 func (c *USEquityClock) IsOpen(t time.Time) bool {
 	et := t.In(c.loc)

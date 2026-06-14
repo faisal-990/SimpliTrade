@@ -171,6 +171,11 @@ export interface Analytics {
   benchmark_name: string;
 }
 
+export interface MarketStatus {
+  open: boolean;
+  next_change: number; // unix seconds; 0 if unknown
+}
+
 export interface Trader {
   rank: number;
   name: string;

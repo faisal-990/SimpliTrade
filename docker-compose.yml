@@ -35,20 +35,17 @@ services:
         condition: service_healthy
 
   # --- optional: run the towers in containers too (profile "app") ---
+  # All config comes from .env; we only override HOST (the DB is the "db" service
+  # on the compose network, not localhost). restart: unless-stopped keeps both
+  # towers alive across crashes and reboots — start once and leave it.
   server:
     profiles: ["app"]
     build: .
     command: ["/app/server"]
+    restart: unless-stopped
+    env_file: [.env]
     environment:
       HOST: db
-      DBUSER: postgres
-      DBPASS: postgres
-      DBNAME: simplitrade
-      DBPORT: "5432"
-      SSLMODE: disable
-      JWT_KEY: ${JWT_KEY:-dev-insecure-jwt-secret-change-me}
-      MARKET_PROVIDER: ${MARKET_PROVIDER:-fake}
-      MARKET_API_KEY: ${MARKET_API_KEY:-}
     ports:
       - "8080:8080"
     depends_on:
@@ -59,17 +56,25 @@ services:
     profiles: ["app"]
     build: .
     command: ["/app/engine"]
+    restart: unless-stopped
+    env_file: [.env]
     environment:
       HOST: db
-      DBUSER: postgres
-      DBPASS: postgres
-      DBNAME: simplitrade
-      DBPORT: "5432"
-      SSLMODE: disable
-      JWT_KEY: ${JWT_KEY:-dev-insecure-jwt-secret-change-me}
-      MARKET_PROVIDER: ${MARKET_PROVIDER:-fake}
-      MARKET_API_KEY: ${MARKET_API_KEY:-}
-      ENGINE_TICK_INTERVAL: ${ENGINE_TICK_INTERVAL:-60s}
+      # Free-tier-safe live defaults (override in .env if you upgrade the feed).
+      ENGINE_TICK_INTERVAL: ${ENGINE_TICK_INTERVAL:-300s}
+      MARKET_REFRESH_LIMIT: ${MARKET_REFRESH_LIMIT:-8}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-shot universe seed: docker compose --profile seed run --rm seed
+  seed:
+    profiles: ["seed"]
+    build: .
+    command: ["/app/seed"]
+    env_file: [.env]
+    environment:
+      HOST: db
     depends_on:
       db:
         condition: service_healthy

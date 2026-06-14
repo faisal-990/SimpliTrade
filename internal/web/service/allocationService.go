@@ -130,6 +130,7 @@ func (s *allocationService) Detail(ctx context.Context, userID, allocationID str
 		out.Trades = append(out.Trades, dto.AllocationTradeDTO{
 			Symbol: t.Symbol, Side: t.Side, Quantity: t.Quantity,
 			Price: t.Price, TotalValue: t.TotalValue, ExecutedAt: t.ExecutedAt.Unix(),
+			Reason: t.Reason,
 		})
 	}
 	return out, nil

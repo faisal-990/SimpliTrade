@@ -284,6 +284,9 @@ type Trade struct {
 	// NULLs under a unique index), so non-idempotent trades are unaffected.
 	IdempotencyKey *string    `gorm:"type:varchar(80);uniqueIndex"`
 	InvestorID     *uuid.UUID `gorm:"type:uuid"` // nullable: who was followed for this copy trade
+	// Reason is the strategy's plain-English rationale (e.g. "momentum breakout,
+	// RSI 72"); empty for manual user trades.
+	Reason string `gorm:"type:varchar(200)"`
 	CreatedAt      time.Time
 	DeletedAt      gorm.DeletedAt `gorm:"index"`
 }

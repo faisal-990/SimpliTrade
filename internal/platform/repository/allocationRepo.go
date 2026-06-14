@@ -52,6 +52,7 @@ type AllocationTrade struct {
 	Price      float64
 	TotalValue float64
 	ExecutedAt time.Time
+	Reason     string
 }
 
 // AllocationActivity is what the mirrored investor's bot has done with a user's
@@ -212,6 +213,7 @@ func (r *allocationRepo) Activity(ctx context.Context, userID, allocationID uuid
 	outTrades := make([]AllocationTrade, 0, len(trades))
 	for _, t := range trades {
 		outTrades = append(outTrades, AllocationTrade{
+			Reason: t.Reason,
 			Symbol: t.Stock.Symbol, Side: t.Type, Quantity: t.Quantity,
 			Price: t.Price, TotalValue: t.TotalValue, ExecutedAt: t.ExecutedAt,
 		})

@@ -226,14 +226,17 @@ export default function Portfolio() {
           ) : (
             <ul className="divide-y">
               {history.data.slice(0, 12).map((t) => (
-                <li key={t.trade_id} className="flex items-center justify-between py-2.5 text-sm">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase", t.side === "buy" ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss")}>{t.side}</span>
-                    <span className="font-medium">{t.symbol}</span>
-                    <span className="truncate text-muted-foreground">{qty(t.quantity)} @ {money(t.price)}</span>
-                    <span className="hidden text-xs text-muted-foreground sm:inline">· {money(t.total_value)}</span>
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">{fromUnix(t.executed_at)}</span>
+                <li key={t.trade_id} className="py-2.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase", t.side === "buy" ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss")}>{t.side}</span>
+                      <span className="font-medium">{t.symbol}</span>
+                      <span className="truncate text-muted-foreground">{qty(t.quantity)} @ {money(t.price)}</span>
+                      <span className="hidden text-xs text-muted-foreground sm:inline">· {money(t.total_value)}</span>
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{fromUnix(t.executed_at)}</span>
+                  </div>
+                  {t.reason && <p className="mt-0.5 text-[11px] italic text-muted-foreground">“{t.reason}”</p>}
                 </li>
               ))}
             </ul>
@@ -250,16 +253,19 @@ export default function Portfolio() {
           ) : (
             <ul className="divide-y">
               {feed.data.slice(0, 12).map((f: FeedItem, i) => (
-                <li key={`${f.investor_id}-${f.executed_at}-${i}`} className="flex items-center justify-between py-2.5 text-sm">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-[10px] font-semibold text-primary">
-                      {initials(f.investor_name)}
+                <li key={`${f.investor_id}-${f.executed_at}-${i}`} className="py-2.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-[10px] font-semibold text-primary">
+                        {initials(f.investor_name)}
+                      </span>
+                      <Link to={`/app/investors/${f.investor_id}`} className="shrink-0 font-medium hover:text-primary">{f.investor_name}</Link>
+                      <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase", f.side === "buy" ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss")}>{f.side}</span>
+                      <span className="truncate text-muted-foreground">{qty(f.quantity)} {f.symbol} @ {money(f.price)}</span>
                     </span>
-                    <Link to={`/app/investors/${f.investor_id}`} className="shrink-0 font-medium hover:text-primary">{f.investor_name}</Link>
-                    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase", f.side === "buy" ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss")}>{f.side}</span>
-                    <span className="truncate text-muted-foreground">{qty(f.quantity)} {f.symbol} @ {money(f.price)}</span>
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">{fromUnix(f.executed_at)}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{fromUnix(f.executed_at)}</span>
+                  </div>
+                  {f.reason && <p className="mt-0.5 pl-8 text-[11px] italic text-muted-foreground">“{f.reason}”</p>}
                 </li>
               ))}
             </ul>

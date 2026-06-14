@@ -20,12 +20,12 @@ type fakeTradeRepo struct {
 	err        error
 }
 
-func (f *fakeTradeRepo) ExecuteBuy(_ context.Context, acct uuid.UUID, symbol string, qty float64, _ *string) (*models.Trade, error) {
+func (f *fakeTradeRepo) ExecuteBuy(_ context.Context, acct uuid.UUID, symbol string, qty float64, _ *string, _ string) (*models.Trade, error) {
 	f.lastSide, f.lastSymbol, f.lastQty = "buy", symbol, qty
 	return f.trade, f.err
 }
 
-func (f *fakeTradeRepo) ExecuteSell(_ context.Context, acct uuid.UUID, symbol string, qty float64, _ *string) (*models.Trade, error) {
+func (f *fakeTradeRepo) ExecuteSell(_ context.Context, acct uuid.UUID, symbol string, qty float64, _ *string, _ string) (*models.Trade, error) {
 	f.lastSide, f.lastSymbol, f.lastQty = "sell", symbol, qty
 	return f.trade, f.err
 }

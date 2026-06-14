@@ -17,8 +17,8 @@ import (
 // in a single transaction with the account row locked FOR UPDATE, so concurrent
 // trades on the same account serialize and balances never go negative.
 type TradeRepo interface {
-	ExecuteBuy(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string) (*models.Trade, error)
-	ExecuteSell(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string) (*models.Trade, error)
+	ExecuteBuy(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string, reason string) (*models.Trade, error)
+	ExecuteSell(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string, reason string) (*models.Trade, error)
 	ListByAccount(ctx context.Context, accountID uuid.UUID, limit, offset int) ([]models.Trade, error)
 	// SellAll liquidates every holding in the account at the current price.
 	SellAll(ctx context.Context, accountID uuid.UUID) (int, error)
@@ -41,15 +41,15 @@ const (
 	sideSell tradeSide = "sell"
 )
 
-func (r *tradeRepo) ExecuteBuy(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string) (*models.Trade, error) {
-	return r.execute(ctx, sideBuy, accountID, symbol, qty, idemKey)
+func (r *tradeRepo) ExecuteBuy(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string, reason string) (*models.Trade, error) {
+	return r.execute(ctx, sideBuy, accountID, symbol, qty, idemKey, reason)
 }
 
-func (r *tradeRepo) ExecuteSell(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string) (*models.Trade, error) {
-	return r.execute(ctx, sideSell, accountID, symbol, qty, idemKey)
+func (r *tradeRepo) ExecuteSell(ctx context.Context, accountID uuid.UUID, symbol string, qty float64, idemKey *string, reason string) (*models.Trade, error) {
+	return r.execute(ctx, sideSell, accountID, symbol, qty, idemKey, reason)
 }
 
-func (r *tradeRepo) execute(ctx context.Context, side tradeSide, accountID uuid.UUID, symbol string, qty float64, idemKey *string) (*models.Trade, error) {
+func (r *tradeRepo) execute(ctx context.Context, side tradeSide, accountID uuid.UUID, symbol string, qty float64, idemKey *string, reason string) (*models.Trade, error) {
 	var result *models.Trade
 	err := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Idempotency: a repeated key returns the original trade, never re-executes.
@@ -148,6 +148,7 @@ func (r *tradeRepo) execute(ctx context.Context, side tradeSide, accountID uuid.
 			ExecutedAt:     time.Now(),
 			Status:         "executed",
 			IdempotencyKey: idemKey,
+			Reason:         reason,
 		}
 		if err := tx.Create(trade).Error; err != nil {
 			return err

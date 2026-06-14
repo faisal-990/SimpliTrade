@@ -47,4 +47,5 @@ type FeedItem struct {
 	Quantity     float64 `json:"quantity"`
 	Price        float64 `json:"price"`
 	ExecutedAt   int64   `json:"executed_at"`
+	Reason       string  `json:"reason"`
 }

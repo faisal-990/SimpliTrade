@@ -132,13 +132,16 @@ export function AllocationCard({ a, onStop, stopping }: { a: AggAlloc; onStop: (
                 {trades.length ? (
                   <ul className="space-y-1">
                     {trades.map((t, i) => (
-                      <li key={`${t.symbol}-${t.executed_at}-${i}`} className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1.5">
-                          <span className={cn("rounded px-1 py-0.5 text-[9px] font-semibold uppercase", t.side === "buy" ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss")}>{t.side}</span>
-                          <span className="font-medium">{t.symbol}</span>
-                          <span className="text-muted-foreground">{qty(t.quantity)} @ {money(t.price)}</span>
-                        </span>
-                        <span className="text-muted-foreground">{fromUnix(t.executed_at)}</span>
+                      <li key={`${t.symbol}-${t.executed_at}-${i}`} className="text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <span className={cn("rounded px-1 py-0.5 text-[9px] font-semibold uppercase", t.side === "buy" ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss")}>{t.side}</span>
+                            <span className="font-medium">{t.symbol}</span>
+                            <span className="text-muted-foreground">{qty(t.quantity)} @ {money(t.price)}</span>
+                          </span>
+                          <span className="text-muted-foreground">{fromUnix(t.executed_at)}</span>
+                        </div>
+                        {t.reason && <p className="mt-0.5 pl-1 text-[11px] italic text-muted-foreground">“{t.reason}”</p>}
                       </li>
                     ))}
                   </ul>

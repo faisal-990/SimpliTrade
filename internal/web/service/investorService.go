@@ -73,7 +73,7 @@ func (s *investorService) Trades(ctx context.Context, investorID string, limit, 
 		out = append(out, dto.TradeHistoryItem{
 			TradeID: t.ID.String(), Symbol: t.Stock.Symbol, Side: t.Type,
 			Quantity: t.Quantity, Price: t.Price, TotalValue: t.TotalValue,
-			Status: t.Status, ExecutedAt: t.ExecutedAt.Unix(),
+			Status: t.Status, ExecutedAt: t.ExecutedAt.Unix(), Reason: t.Reason,
 		})
 	}
 	return out, nil
@@ -139,6 +139,7 @@ func (s *investorService) Feed(ctx context.Context, followerID string, limit int
 			Quantity:     t.Quantity,
 			Price:        t.Price,
 			ExecutedAt:   t.ExecutedAt.Unix(),
+			Reason:       t.Reason,
 		})
 	}
 	return out, nil

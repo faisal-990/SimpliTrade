@@ -12,6 +12,7 @@ import (
 
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/auth"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/models"
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/controllers"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/middlewares"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/service"
@@ -29,6 +30,9 @@ func (f *fakePortfolioRepo) GetAccountByID(context.Context, uuid.UUID) (*models.
 }
 func (f *fakePortfolioRepo) ListHoldings(context.Context, uuid.UUID) ([]models.Holding, error) {
 	return f.holdings, nil
+}
+func (f *fakePortfolioRepo) TopTraders(context.Context, int) ([]repository.TraderRow, error) {
+	return nil, nil
 }
 
 func newPortfolioRouter(repo *fakePortfolioRepo) (*gin.Engine, string) {

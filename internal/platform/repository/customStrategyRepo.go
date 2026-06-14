@@ -88,11 +88,18 @@ func (r *customStrategyRepo) Delete(ctx context.Context, userID, investorID uuid
 				return err
 			}
 		}
-		// Delete the identity — FK cascades remove follows, performance, the bot's
-		// account, holdings and trades.
+		// Remove rows referencing the investor that aren't covered by a cascading
+		// FK (performances has no ON DELETE CASCADE), then the investor + user.
+		if err := tx.Where("investor_id = ?", investorID).Delete(&models.Performance{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("investor_id = ?", investorID).Delete(&models.Follow{}).Error; err != nil {
+			return err
+		}
 		if err := tx.Where("id = ?", investorID).Delete(&models.Investor{}).Error; err != nil {
 			return err
 		}
+		// Deleting the user cascades to its account → holdings + trades.
 		if err := tx.Where("id = ?", investorID).Delete(&models.User{}).Error; err != nil {
 			return err
 		}

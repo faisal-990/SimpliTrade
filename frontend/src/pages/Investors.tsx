@@ -16,7 +16,9 @@ export default function Investors() {
   const del = useDeleteInvestor();
   const removeMine = (id: string) => {
     if (window.confirm("Delete this investor? Any allocations to it are closed and the cash returned to you. This can't be undone.")) {
-      del.mutate(id);
+      del.mutate(id, {
+        onError: (e) => window.alert(e instanceof Error ? e.message : "Could not delete investor"),
+      });
     }
   };
 

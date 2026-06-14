@@ -13,6 +13,27 @@ import (
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/models"
 )
 
+// flexFloat unmarshals a number that the API may send as either a JSON number
+// (e.g. /statistics) or a quoted string (e.g. /quote), and tolerates empty/"NA"
+// values by treating them as 0. This keeps the adapter robust to Twelve Data's
+// inconsistent field encodings.
+type flexFloat float64
+
+func (f *flexFloat) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), `"`)
+	if s == "" || s == "null" || s == "NA" {
+		*f = 0
+		return nil
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		*f = 0 // tolerate unexpected non-numeric values rather than failing the whole fetch
+		return nil
+	}
+	*f = flexFloat(v)
+	return nil
+}
+
 // TwelveDataProvider implements Provider against the Twelve Data REST API. It is
 // constructed only when a key is configured; otherwise the FakeProvider is used.
 // Fundamental coverage depends on plan — fields the API omits are left zero, and
@@ -59,23 +80,23 @@ func (p *TwelveDataProvider) get(ctx context.Context, path string, params url.Va
 // --- quote ---
 
 type tdQuote struct {
-	Symbol    string `json:"symbol"`
-	Close     string `json:"close"`
-	Open      string `json:"open"`
-	High      string `json:"high"`
-	Low       string `json:"low"`
-	Volume    string `json:"volume"`
-	Timestamp int64  `json:"timestamp"`
+	Symbol    string    `json:"symbol"`
+	Close     flexFloat `json:"close"`
+	Open      flexFloat `json:"open"`
+	High      flexFloat `json:"high"`
+	Low       flexFloat `json:"low"`
+	Volume    flexFloat `json:"volume"`
+	Timestamp int64     `json:"timestamp"`
 }
 
 func (q tdQuote) toQuote() Quote {
 	return Quote{
 		Symbol: q.Symbol,
-		Price:  parseFloat(q.Close),
-		Open:   parseFloat(q.Open),
-		High:   parseFloat(q.High),
-		Low:    parseFloat(q.Low),
-		Volume: int64(parseFloat(q.Volume)),
+		Price:  float64(q.Close),
+		Open:   float64(q.Open),
+		High:   float64(q.High),
+		Low:    float64(q.Low),
+		Volume: int64(q.Volume),
 		Time:   time.Unix(q.Timestamp, 0),
 	}
 }
@@ -125,12 +146,12 @@ func (p *TwelveDataProvider) BatchQuotes(ctx context.Context, symbols []string) 
 
 type tdTimeSeries struct {
 	Values []struct {
-		Datetime string `json:"datetime"`
-		Open     string `json:"open"`
-		High     string `json:"high"`
-		Low      string `json:"low"`
-		Close    string `json:"close"`
-		Volume   string `json:"volume"`
+		Datetime string    `json:"datetime"`
+		Open     flexFloat `json:"open"`
+		High     flexFloat `json:"high"`
+		Low      flexFloat `json:"low"`
+		Close    flexFloat `json:"close"`
+		Volume   flexFloat `json:"volume"`
 	} `json:"values"`
 }
 
@@ -154,9 +175,9 @@ func (p *TwelveDataProvider) Candles(ctx context.Context, symbol, interval strin
 	for _, v := range ts.Values {
 		t, _ := time.Parse("2006-01-02", v.Datetime)
 		candles = append(candles, Candle{
-			Time: t, Open: parseFloat(v.Open), High: parseFloat(v.High),
-			Low: parseFloat(v.Low), Close: parseFloat(v.Close),
-			Volume: int64(parseFloat(v.Volume)), Interval: "1d",
+			Time: t, Open: float64(v.Open), High: float64(v.High),
+			Low: float64(v.Low), Close: float64(v.Close),
+			Volume: int64(v.Volume), Interval: "1d",
 		})
 	}
 	return candles, nil
@@ -167,19 +188,19 @@ func (p *TwelveDataProvider) Candles(ctx context.Context, symbol, interval strin
 type tdStatistics struct {
 	Statistics struct {
 		Valuations struct {
-			TrailingPE   string `json:"trailing_pe"`
-			ForwardPE    string `json:"forward_pe"`
-			PriceToBook  string `json:"price_to_book_mrq"`
-			PriceToSales string `json:"price_to_sales_ttm"`
+			TrailingPE   flexFloat `json:"trailing_pe"`
+			ForwardPE    flexFloat `json:"forward_pe"`
+			PriceToBook  flexFloat `json:"price_to_book_mrq"`
+			PriceToSales flexFloat `json:"price_to_sales_ttm"`
 		} `json:"valuations_metrics"`
 		Financials struct {
-			GrossMargin     string `json:"gross_margin"`
-			OperatingMargin string `json:"operating_margin"`
-			ProfitMargin    string `json:"profit_margin"`
-			ReturnOnEquity  string `json:"return_on_equity_ttm"`
+			GrossMargin     flexFloat `json:"gross_margin"`
+			OperatingMargin flexFloat `json:"operating_margin"`
+			ProfitMargin    flexFloat `json:"profit_margin"`
+			ReturnOnEquity  flexFloat `json:"return_on_equity_ttm"`
 		} `json:"financials"`
 		StockStats struct {
-			Beta string `json:"beta"`
+			Beta flexFloat `json:"beta"`
 		} `json:"stock_statistics"`
 	} `json:"statistics"`
 }
@@ -193,19 +214,14 @@ func (p *TwelveDataProvider) Fundamentals(ctx context.Context, symbol string) (m
 	}
 	v, f := s.Statistics.Valuations, s.Statistics.Financials
 	return models.Fundamentals{
-		PE:              parseFloat(v.TrailingPE),
-		ForwardPE:       parseFloat(v.ForwardPE),
-		PB:              parseFloat(v.PriceToBook),
-		PS:              parseFloat(v.PriceToSales),
-		GrossMargin:     parseFloat(f.GrossMargin),
-		OperatingMargin: parseFloat(f.OperatingMargin),
-		NetMargin:       parseFloat(f.ProfitMargin),
-		ROE:             parseFloat(f.ReturnOnEquity),
-		Beta:            parseFloat(s.Statistics.StockStats.Beta),
+		PE:              float64(v.TrailingPE),
+		ForwardPE:       float64(v.ForwardPE),
+		PB:              float64(v.PriceToBook),
+		PS:              float64(v.PriceToSales),
+		GrossMargin:     float64(f.GrossMargin),
+		OperatingMargin: float64(f.OperatingMargin),
+		NetMargin:       float64(f.ProfitMargin),
+		ROE:             float64(f.ReturnOnEquity),
+		Beta:            float64(s.Statistics.StockStats.Beta),
 	}, nil
-}
-
-func parseFloat(s string) float64 {
-	f, _ := strconv.ParseFloat(strings.TrimSpace(s), 64)
-	return f
 }

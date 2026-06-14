@@ -25,8 +25,6 @@ type User struct {
 	EmailVerified bool      `gorm:"not null;default:false"`
 	LastLoginAt   *time.Time
 	Accounts      []Account `gorm:"foreignKey:UserID"` // sim and/or live trading accounts
-	Trades        []Trade   `gorm:"foreignKey:UserID"`
-	Holdings      []Holding `gorm:"foreignKey:UserID"`
 	Follows       []Follow  `gorm:"foreignKey:FollowerID"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
@@ -45,8 +43,10 @@ type Account struct {
 	User      User        `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 	Mode      AccountMode `gorm:"type:varchar(4);not null;default:'sim';uniqueIndex:idx_user_mode"` // one account per mode per user
 	Currency  string      `gorm:"type:varchar(3);not null;default:'USD'"`
-	Balance   float64     `gorm:"type:numeric(15,2);not null;default:100000"` // cash available to trade
+	Balance   float64     `gorm:"type:numeric(18,4);not null;default:100000"` // cash available to trade
 	IsActive  bool        `gorm:"not null;default:true"`
+	Holdings  []Holding   `gorm:"foreignKey:AccountID"`
+	Trades    []Trade     `gorm:"foreignKey:AccountID"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -199,35 +199,41 @@ type StockPrice struct {
 // =======================
 // Trade Model
 // =======================
+// A Trade belongs to an Account (sim or live), not directly to a User — so the
+// same trade machinery serves human accounts and engine bot accounts alike.
 type Trade struct {
-	ID          uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	UserID      uuid.UUID  `gorm:"type:uuid;not null;index:idx_user_executed"`
-	User        User       `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
-	StockID     uuid.UUID  `gorm:"type:uuid;not null;index"`
-	Stock       Stock      `gorm:"foreignKey:StockID;constraint:OnDelete:CASCADE"`
-	Type        string     `gorm:"type:varchar(4);not null" validate:"oneof=buy sell"`
-	Quantity    float64    `gorm:"type:numeric(10,2);not null" validate:"gt=0"`
-	Price       float64    `gorm:"type:numeric(10,2);not null" validate:"gt=0"`
-	TotalValue  float64    `gorm:"type:numeric(15,2)"` // Price * Quantity (for easier queries)
-	ExecutedAt  time.Time  `gorm:"not null;index:idx_user_executed"`
-	Status      string     `gorm:"type:varchar(20);default:'executed'"` // pending, executed, cancelled
-	IsSimulated bool       `gorm:"default:true"`
-	InvestorID  *uuid.UUID `gorm:"type:uuid"` // nullable: who was followed for this copy trade
-	CreatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
+	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	AccountID  uuid.UUID `gorm:"type:uuid;not null;index:idx_account_executed"`
+	Account    Account   `gorm:"foreignKey:AccountID;constraint:OnDelete:CASCADE"`
+	StockID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	Stock      Stock     `gorm:"foreignKey:StockID;constraint:OnDelete:CASCADE"`
+	Type       string    `gorm:"type:varchar(4);not null" validate:"oneof=buy sell"`
+	Quantity   float64   `gorm:"type:numeric(18,4);not null" validate:"gt=0"`
+	Price      float64   `gorm:"type:numeric(18,4);not null" validate:"gt=0"`
+	TotalValue float64   `gorm:"type:numeric(18,4)"` // Price * Quantity (for easier queries)
+	ExecutedAt time.Time `gorm:"not null;index:idx_account_executed"`
+	Status     string    `gorm:"type:varchar(20);default:'executed'"` // pending, executed, cancelled
+	// IdempotencyKey makes a buy/sell safe to retry: a duplicate key returns the
+	// original trade instead of executing twice. Nullable (Postgres allows many
+	// NULLs under a unique index), so non-idempotent trades are unaffected.
+	IdempotencyKey *string    `gorm:"type:varchar(80);uniqueIndex"`
+	InvestorID     *uuid.UUID `gorm:"type:uuid"` // nullable: who was followed for this copy trade
+	CreatedAt      time.Time
+	DeletedAt      gorm.DeletedAt `gorm:"index"`
 }
 
 // =======================
 // Holding Model (Portfolio)
 // =======================
+// A Holding is an account's position in a stock — unique per (account, stock).
 type Holding struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	UserID    uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_stock"`
-	StockID   uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_stock"`
-	User      User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
+	AccountID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_account_stock"`
+	StockID   uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_account_stock"`
+	Account   Account   `gorm:"foreignKey:AccountID;constraint:OnDelete:CASCADE"`
 	Stock     Stock     `gorm:"foreignKey:StockID;constraint:OnDelete:CASCADE"`
-	Quantity  float64   `gorm:"type:numeric(10,2);not null"`
-	AvgPrice  float64   `gorm:"type:numeric(10,2);not null"`
+	Quantity  float64   `gorm:"type:numeric(18,4);not null"`
+	AvgPrice  float64   `gorm:"type:numeric(18,4);not null"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

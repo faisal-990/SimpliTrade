@@ -6,8 +6,10 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/faisal-990/ProjectInvestApp/internal/broker"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/auth"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/config"
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/models"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/storage"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/utils"
@@ -55,10 +57,15 @@ func main() {
 	investorservice := service.NewInvestorService(investorrepo)
 	investorhandler := controllers.NewInvestorHandler(investorservice)
 
+	// trading (broker seam: sim today, live later via Account.Mode)
+	traderepo := repository.NewTradeRepo(db)
+	simBroker := broker.NewSimulatedBroker(traderepo)
+	tradeservice := service.NewTradeService(broker.BrokerFor(models.ModeSim, simBroker), traderepo)
+
 	// portfolio
 	portfoliorepo := repository.NewPortfolioRepo(db)
 	portfolioservice := service.NewPortfolioService(portfoliorepo)
-	portfoliohandler := controllers.NewPortfolioHandler(portfolioservice)
+	portfoliohandler := controllers.NewPortfolioHandler(portfolioservice, tradeservice)
 
 	utils.LogInfo("modules loaded, starting Gin engine")
 	r := gin.Default()

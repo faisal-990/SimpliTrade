@@ -17,6 +17,7 @@ import (
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/config"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/mailer"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/models"
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/oauth"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/repository"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/storage"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/utils"
@@ -55,6 +56,16 @@ func main() {
 	})
 	authservice := service.NewAuthService(authrepo, tokenManager, mail, cfg.HTTP.AppBaseURL)
 	authhandler := controllers.NewAuthHandler(authservice)
+
+	// OAuth sign-in: register a provider per configured credential set. Empty
+	// creds → that provider is simply absent (its button is hidden client-side).
+	oauthRegistry := oauth.Registry{}
+	if cfg.OAuth.GoogleClientID != "" && cfg.OAuth.GoogleClientSecret != "" {
+		oauthRegistry["google"] = oauth.NewGoogleProvider(cfg.OAuth.GoogleClientID, cfg.OAuth.GoogleClientSecret)
+		utils.LogInfo("oauth: google provider enabled")
+	}
+	oauthservice := service.NewOAuthService(authrepo, tokenManager, oauthRegistry)
+	oauthhandler := controllers.NewOAuthHandler(oauthservice, cfg.HTTP.APIBaseURL, cfg.HTTP.AppBaseURL)
 
 	// News
 	newsservice := service.NewNewsService()
@@ -115,7 +126,7 @@ func main() {
 	r.GET("/readyz", readyHandler(db))
 	r.GET("/metrics", middlewares.MetricsHandler())
 
-	router.InitializeRoutes(r, authMW, authhandler, dashboardhandler, investorhandler, portfoliohandler, allocationhandler, adminhandler, backtesthandler, adminMW)
+	router.InitializeRoutes(r, authMW, authhandler, dashboardhandler, investorhandler, portfoliohandler, allocationhandler, adminhandler, backtesthandler, oauthhandler, adminMW)
 	log.Println("✅ Initialized routes")
 
 	runServer(r, cfg.HTTP.Port)

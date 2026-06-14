@@ -21,6 +21,7 @@ func Models() []any {
 		&models.Account{},
 		&models.RefreshToken{},
 		&models.PasswordReset{},
+		&models.OAuthAccount{},
 		&models.Investor{},
 		&models.Performance{},
 		&models.Stock{},

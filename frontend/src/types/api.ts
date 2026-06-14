@@ -7,6 +7,8 @@ export interface User {
   email: string;
   role: string;
   email_verified: boolean;
+  avatar_url?: string;
+  bio?: string;
 }
 
 export interface AuthResponse {
@@ -137,6 +139,7 @@ export interface Investor {
   strategy: string;
   roi: number;
   rank: number;
+  followers: number;
 }
 
 export interface Allocation {

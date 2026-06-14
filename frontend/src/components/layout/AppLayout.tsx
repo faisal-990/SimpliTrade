@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Zap,
+  CircleUser,
 } from "lucide-react";
 import { Brand, LogoMark } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ const NAV = [
   { to: "/app/portfolio", label: "Portfolio", icon: Briefcase },
   { to: "/app/investors", label: "Investors", icon: Trophy },
   { to: "/app/feed", label: "Feed", icon: Rss },
+  { to: "/app/profile", label: "Profile", icon: CircleUser },
 ];
 
 const COLLAPSE_KEY = "simplitrade.sidebar.collapsed";
@@ -125,7 +127,7 @@ export function AppLayout() {
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <><PanelLeftClose className="h-4 w-4" /> Collapse</>}
         </button>
 
-        {!collapsed && <UserCard name={user?.name} email={user?.email} onLogout={handleLogout} />}
+        {!collapsed && <UserCard name={user?.name} email={user?.email} avatarUrl={user?.avatar_url} onLogout={handleLogout} />}
         {collapsed && (
           <button onClick={handleLogout} title="Sign out" className="flex h-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent">
             <LogOut className="h-4 w-4" />
@@ -147,7 +149,7 @@ export function AppLayout() {
             <SimulateButton />
           </div>
           <div className="mt-3">
-            <UserCard name={user?.name} email={user?.email} onLogout={handleLogout} />
+            <UserCard name={user?.name} email={user?.email} avatarUrl={user?.avatar_url} onLogout={handleLogout} />
           </div>
         </div>
       )}
@@ -162,18 +164,22 @@ export function AppLayout() {
   );
 }
 
-function UserCard({ name, email, onLogout }: { name?: string; email?: string; onLogout: () => void }) {
+function UserCard({ name, email, avatarUrl, onLogout }: { name?: string; email?: string; avatarUrl?: string; onLogout: () => void }) {
   return (
     <div className="rounded-xl border bg-background/60 p-3">
-      <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-          {initials(name)}
-        </span>
+      <NavLink to="/app/profile" className="flex items-center gap-3 rounded-lg hover:opacity-90">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={name ?? "User"} className="h-9 w-9 rounded-full object-cover" referrerPolicy="no-referrer" />
+        ) : (
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
+            {initials(name)}
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{name ?? "User"}</p>
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
-      </div>
+      </NavLink>
       <Button variant="ghost" size="sm" className="mt-2 w-full justify-start text-muted-foreground" onClick={onLogout}>
         <LogOut className="h-4 w-4" /> Sign out
       </Button>

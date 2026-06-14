@@ -26,6 +26,7 @@ func InitializeRoutes(
 	allocationHandler *controllers.AllocationHandler,
 	adminHandler *controllers.AdminHandler,
 	backtestHandler *controllers.BacktestHandler,
+	oauthHandler *controllers.OAuthHandler,
 	adminMW gin.HandlerFunc,
 ) {
 	api := router.Group("/api")
@@ -42,6 +43,10 @@ func InitializeRoutes(
 		authGroup.POST("/forgot-password", authHandler.HandleForgotPassword)
 		authGroup.POST("/reset-password", authHandler.HandleResetPassword)
 		authGroup.GET("/me", authMW, authHandler.HandleAuthForMe)
+		authGroup.PUT("/me", authMW, authHandler.HandleUpdateMe)
+		// OAuth sign-in (public): redirect to provider, then handle the callback.
+		authGroup.GET("/oauth/:provider/login", oauthHandler.HandleLogin)
+		authGroup.GET("/oauth/:provider/callback", oauthHandler.HandleCallback)
 	}
 
 	// Investor routes (protected).

@@ -4,6 +4,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
+import OAuthCallback from "@/pages/OAuthCallback";
+import Profile from "@/pages/Profile";
 import Dashboard from "@/pages/Dashboard";
 import StockDetail from "@/pages/StockDetail";
 import Portfolio from "@/pages/Portfolio";
@@ -19,6 +21,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/oauth/callback" element={<OAuthCallback />} />
 
       {/* authenticated app */}
       <Route element={<RequireAuth />}>
@@ -30,6 +33,7 @@ export default function App() {
           <Route path="investors" element={<Investors />} />
           <Route path="investors/:id" element={<InvestorDetail />} />
           <Route path="feed" element={<Feed />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
 

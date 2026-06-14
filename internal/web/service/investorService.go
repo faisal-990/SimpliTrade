@@ -159,6 +159,6 @@ func parsePair(followerID, investorID string) (uuid.UUID, uuid.UUID, error) {
 func toInvestorDTO(it repository.InvestorSummary) dto.InvestorDTO {
 	return dto.InvestorDTO{
 		ID: it.ID.String(), Name: it.Name, Bio: it.Bio,
-		Strategy: it.Strategy, ROI: it.ROI, Rank: it.Rank,
+		Strategy: it.Strategy, ROI: it.ROI, Rank: it.Rank, Followers: it.Followers,
 	}
 }

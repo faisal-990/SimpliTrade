@@ -36,6 +36,14 @@ type Config struct {
 	Market MarketConfig
 	Engine EngineConfig
 	Mail   MailConfig
+	OAuth  OAuthConfig
+}
+
+// OAuthConfig holds external identity-provider credentials. Empty = that provider
+// is simply not offered (the login button is hidden client-side).
+type OAuthConfig struct {
+	GoogleClientID     string
+	GoogleClientSecret string
 }
 
 // MailConfig is the SMTP relay used for transactional email (e.g. password-reset
@@ -54,6 +62,7 @@ type HTTPConfig struct {
 	RateLimitRPS   int      // per-IP requests/second (0 = disabled)
 	RateLimitBurst int      // per-IP burst allowance
 	AppBaseURL     string   // public frontend URL, used to build links (e.g. password reset)
+	APIBaseURL     string   // public URL of this server, used for OAuth redirect URIs
 }
 
 type DBConfig struct {
@@ -131,6 +140,7 @@ func Load() (*Config, error) {
 			RateLimitRPS:   getInt("RATE_LIMIT_RPS", 20),
 			RateLimitBurst: getInt("RATE_LIMIT_BURST", 40),
 			AppBaseURL:     getString("APP_BASE_URL", "http://localhost:5173"),
+			APIBaseURL:     getString("API_BASE_URL", "http://localhost:8080"),
 		},
 		DB: DBConfig{
 			Host:     getString("HOST", "localhost"),
@@ -145,6 +155,10 @@ func Load() (*Config, error) {
 			JWTSecret:       getString("JWT_KEY", ""),
 			AccessTokenTTL:  getDuration("ACCESS_TOKEN_TTL", 15*time.Minute),
 			RefreshTokenTTL: getDuration("REFRESH_TOKEN_TTL", 720*time.Hour), // 30 days
+		},
+		OAuth: OAuthConfig{
+			GoogleClientID:     getString("GOOGLE_OAUTH_CLIENT_ID", ""),
+			GoogleClientSecret: getString("GOOGLE_OAUTH_CLIENT_SECRET", ""),
 		},
 		Mail: MailConfig{
 			Host:     getString("SMTP_HOST", ""),

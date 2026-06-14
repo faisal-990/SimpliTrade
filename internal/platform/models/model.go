@@ -23,6 +23,10 @@ type User struct {
 	IsBot         bool      `gorm:"not null;default:false"`                   // engine-driven investor persona
 	IsActive      bool      `gorm:"default:true"`
 	EmailVerified bool      `gorm:"not null;default:false"`
+	// Profile (shown in the "About me" section; AvatarURL is populated from an
+	// OAuth provider when the user signs in with one).
+	AvatarURL string `gorm:"type:varchar(512)"`
+	Bio       string `gorm:"type:varchar(500)"`
 	LastLoginAt   *time.Time
 	Accounts      []Account `gorm:"foreignKey:UserID"` // sim and/or live trading accounts
 	Follows       []Follow  `gorm:"foreignKey:FollowerID"`
@@ -91,6 +95,17 @@ type RefreshToken struct {
 	ExpiresAt time.Time `gorm:"not null;index"`
 	RevokedAt *time.Time
 	CreatedAt time.Time
+}
+
+// OAuthAccount links a user to an external identity provider (Google today;
+// Robinhood etc. plug in the same way). A user can link several providers; each
+// (provider, provider_user_id) pair maps to exactly one user.
+type OAuthAccount struct {
+	ID             uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID         uuid.UUID `gorm:"type:uuid;not null;index"`
+	Provider       string    `gorm:"type:varchar(20);not null;uniqueIndex:idx_provider_identity"`
+	ProviderUserID string    `gorm:"type:varchar(255);not null;uniqueIndex:idx_provider_identity"`
+	CreatedAt      time.Time
 }
 
 // PasswordReset is a single-use, time-limited one-time passcode (OTP) for

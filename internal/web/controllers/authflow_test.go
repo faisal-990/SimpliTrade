@@ -34,6 +34,7 @@ type memAuthRepo struct {
 	accounts map[uuid.UUID]*models.Account
 	tokens   map[uuid.UUID]*models.RefreshToken
 	resets   map[uuid.UUID]*models.PasswordReset
+	oauth    map[string]uuid.UUID // "provider:providerUserID" -> userID
 }
 
 func newMemAuthRepo() *memAuthRepo {
@@ -42,7 +43,38 @@ func newMemAuthRepo() *memAuthRepo {
 		accounts: map[uuid.UUID]*models.Account{},
 		tokens:   map[uuid.UUID]*models.RefreshToken{},
 		resets:   map[uuid.UUID]*models.PasswordReset{},
+		oauth:    map[string]uuid.UUID{},
 	}
+}
+
+func (m *memAuthRepo) GetUserByOAuth(ctx context.Context, provider, providerUserID string) (*models.User, error) {
+	m.mu.Lock()
+	uid, ok := m.oauth[provider+":"+providerUserID]
+	m.mu.Unlock()
+	if !ok {
+		return nil, repository.ErrNotFound
+	}
+	return m.GetUserByID(ctx, uid)
+}
+
+func (m *memAuthRepo) LinkOAuthAccount(_ context.Context, link *models.OAuthAccount) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.oauth[link.Provider+":"+link.ProviderUserID] = link.UserID
+	return nil
+}
+
+func (m *memAuthRepo) UpdateUserProfile(_ context.Context, userID uuid.UUID, name, bio, avatarURL string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if u, ok := m.users[userID]; ok {
+		u.Name = name
+		u.Bio = bio
+		if avatarURL != "" {
+			u.AvatarURL = avatarURL
+		}
+	}
+	return nil
 }
 
 // CreateUser assigns ids and cascades nested accounts, mirroring GORM's Create.

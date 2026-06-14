@@ -28,6 +28,7 @@ func InitializeRoutes(
 	backtestHandler *controllers.BacktestHandler,
 	oauthHandler *controllers.OAuthHandler,
 	customInvestorHandler *controllers.CustomInvestorHandler,
+	analyticsHandler *controllers.AnalyticsHandler,
 	adminMW gin.HandlerFunc,
 ) {
 	api := router.Group("/api")
@@ -113,6 +114,7 @@ func InitializeRoutes(
 	{
 		portfolioGroup.GET("/stats", portfolioHandler.HandleGetUserPortfolioStats)
 		portfolioGroup.GET("/", portfolioHandler.HandleGetUsersStockHoldings)
+		portfolioGroup.GET("/analytics", analyticsHandler.HandleAnalytics)
 	}
 
 	// Dashboard routes (public — market data is not user-specific).

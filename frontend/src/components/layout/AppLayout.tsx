@@ -12,6 +12,7 @@ import {
   PanelLeftOpen,
   Zap,
   CircleUser,
+  LineChart,
 } from "lucide-react";
 import { Brand, LogoMark } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ function SimulateButton({ collapsed }: { collapsed?: boolean }) {
 const NAV = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/portfolio", label: "Portfolio", icon: Briefcase },
+  { to: "/app/analytics", label: "Analytics", icon: LineChart },
   { to: "/app/investors", label: "Investors", icon: Trophy },
   { to: "/app/feed", label: "Feed", icon: Rss },
   { to: "/app/profile", label: "Profile", icon: CircleUser },

@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import type {
   Allocation,
   AllocationDetail,
+  Analytics,
   BacktestResult,
   FeedItem,
   Investor,
@@ -60,6 +61,9 @@ export const usePortfolioStats = () =>
 
 export const useHoldings = () =>
   useQuery({ queryKey: qk.holdings, queryFn: () => api.get<PortfolioStats["holdings"]>("/portfolio/") });
+
+export const useAnalytics = () =>
+  useQuery({ queryKey: ["analytics"] as const, queryFn: () => api.get<Analytics>("/portfolio/analytics") });
 
 export const useTradeHistory = () =>
   useQuery({ queryKey: qk.tradeHistory, queryFn: () => api.get<TradeHistoryItem[]>("/trade/history") });

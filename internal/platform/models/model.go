@@ -189,16 +189,18 @@ type Fundamentals struct {
 // StockPrice Model (Time Series Data)
 // =======================
 type StockPrice struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	StockID   uuid.UUID `gorm:"type:uuid;not null;index"`
+	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	// One bar per (stock, timestamp, interval) — makes candle inserts idempotent
+	// so re-seeding/backfilling never duplicates history.
+	StockID   uuid.UUID `gorm:"type:uuid;not null;index;uniqueIndex:idx_price_bar"`
 	Stock     Stock     `gorm:"foreignKey:StockID;constraint:OnDelete:CASCADE"`
-	Timestamp time.Time `gorm:"not null;index"`
+	Timestamp time.Time `gorm:"not null;index;uniqueIndex:idx_price_bar"`
 	Open      float64   `gorm:"type:numeric(10,2)"`
 	Close     float64   `gorm:"type:numeric(10,2)"`
 	High      float64   `gorm:"type:numeric(10,2)"`
 	Low       float64   `gorm:"type:numeric(10,2)"`
 	Volume    int64     `gorm:"type:bigint"`
-	Interval  string    `gorm:"type:varchar(10);not null"`
+	Interval  string    `gorm:"type:varchar(10);not null;uniqueIndex:idx_price_bar"`
 	CreatedAt time.Time
 }
 

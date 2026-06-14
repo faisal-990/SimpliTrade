@@ -24,6 +24,16 @@ services:
       timeout: 3s
       retries: 10
 
+  # Lightweight web UI to browse the database at http://localhost:8081
+  # (System: PostgreSQL, Server: db, User: postgres, Password: postgres, DB: simplitrade)
+  adminer:
+    image: adminer:4
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
   # --- optional: run the towers in containers too (profile "app") ---
   server:
     profiles: ["app"]

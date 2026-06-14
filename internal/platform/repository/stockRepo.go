@@ -84,7 +84,14 @@ func (r *stockRepo) ListSymbols(ctx context.Context) ([]string, error) {
 }
 
 func (r *stockRepo) InsertCandle(ctx context.Context, price *models.StockPrice) error {
-	return r.DB.WithContext(ctx).Create(price).Error
+	// Idempotent: a bar already stored for this (stock, timestamp, interval) is
+	// left untouched, so re-seeding never duplicates history.
+	return r.DB.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "stock_id"}, {Name: "timestamp"}, {Name: "interval"}},
+			DoNothing: true,
+		}).
+		Create(price).Error
 }
 
 func (r *stockRepo) UpdatePrice(ctx context.Context, symbol string, price float64) error {

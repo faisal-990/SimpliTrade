@@ -91,6 +91,7 @@ func (s *tradeService) History(ctx context.Context, accountID string, limit, off
 			TotalValue: t.TotalValue,
 			Status:     t.Status,
 			ExecutedAt: t.ExecutedAt.Unix(),
+			Reason:     t.Reason,
 		})
 	}
 	return items, nil

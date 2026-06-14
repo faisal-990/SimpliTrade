@@ -130,6 +130,7 @@ export interface TradeHistoryItem {
   total_value: number;
   status: string;
   executed_at: number;
+  reason?: string;
 }
 
 export interface Investor {
@@ -213,6 +214,7 @@ export interface AllocationTrade {
   price: number;
   total_value: number;
   executed_at: number;
+  reason?: string;
 }
 
 export interface AllocationDetail extends Allocation {
@@ -273,4 +275,5 @@ export interface FeedItem {
   quantity: number;
   price: number;
   executed_at: number;
+  reason?: string;
 }

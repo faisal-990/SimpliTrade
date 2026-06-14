@@ -30,4 +30,5 @@ type TradeHistoryItem struct {
 	TotalValue float64 `json:"total_value"`
 	Status     string  `json:"status"`
 	ExecutedAt int64   `json:"executed_at"`
+	Reason     string  `json:"reason"` // strategy rationale; empty for manual trades
 }

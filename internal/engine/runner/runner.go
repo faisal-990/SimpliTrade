@@ -219,6 +219,7 @@ func (r *Runner) tradeBot(ctx context.Context, bot Bot, snapshot []decide.StockV
 			Symbol:    in.Symbol,
 			Side:      sideOf(in.Action),
 			Quantity:  in.Quantity,
+			Reason:    in.Reason,
 		}
 		if _, err := r.broker.Execute(ctx, order); err != nil {
 			// Insufficient funds / shares are normal outcomes, not failures.

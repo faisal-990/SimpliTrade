@@ -45,10 +45,10 @@ func (f *fakeBroker) Execute(_ context.Context, o broker.Order) (broker.Fill, er
 // is faked) so they no-op.
 type fakeHistoryRepo struct{ trades []models.Trade }
 
-func (f *fakeHistoryRepo) ExecuteBuy(context.Context, uuid.UUID, string, float64, *string) (*models.Trade, error) {
+func (f *fakeHistoryRepo) ExecuteBuy(context.Context, uuid.UUID, string, float64, *string, string) (*models.Trade, error) {
 	return nil, nil
 }
-func (f *fakeHistoryRepo) ExecuteSell(context.Context, uuid.UUID, string, float64, *string) (*models.Trade, error) {
+func (f *fakeHistoryRepo) ExecuteSell(context.Context, uuid.UUID, string, float64, *string, string) (*models.Trade, error) {
 	return nil, nil
 }
 func (f *fakeHistoryRepo) ListByAccount(context.Context, uuid.UUID, int, int) ([]models.Trade, error) {

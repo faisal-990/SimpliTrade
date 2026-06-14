@@ -39,6 +39,7 @@ type AllocationTradeDTO struct {
 	Price      float64 `json:"price"`
 	TotalValue float64 `json:"total_value"`
 	ExecutedAt int64   `json:"executed_at"`
+	Reason     string  `json:"reason"`
 }
 
 // AllocationDetailDTO is an allocation plus exactly what the bot has done with

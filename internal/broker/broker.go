@@ -30,6 +30,9 @@ type Order struct {
 	Side           Side
 	Quantity       float64
 	IdempotencyKey *string
+	// Reason is the strategy's rationale, persisted on the trade so users can see
+	// why a bot acted. Empty for manual orders.
+	Reason string
 }
 
 // Fill is the result of executing an order.
@@ -67,9 +70,9 @@ func (b *SimulatedBroker) Execute(ctx context.Context, order Order) (Fill, error
 	)
 	switch order.Side {
 	case Buy:
-		trade, err = b.trades.ExecuteBuy(ctx, order.AccountID, order.Symbol, order.Quantity, order.IdempotencyKey)
+		trade, err = b.trades.ExecuteBuy(ctx, order.AccountID, order.Symbol, order.Quantity, order.IdempotencyKey, order.Reason)
 	case Sell:
-		trade, err = b.trades.ExecuteSell(ctx, order.AccountID, order.Symbol, order.Quantity, order.IdempotencyKey)
+		trade, err = b.trades.ExecuteSell(ctx, order.AccountID, order.Symbol, order.Quantity, order.IdempotencyKey, order.Reason)
 	default:
 		return Fill{}, ErrInvalidSide
 	}

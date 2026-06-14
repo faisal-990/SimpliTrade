@@ -119,13 +119,16 @@ export default function InvestorDetail() {
             ) : (
               <ul className="divide-y rounded-2xl border bg-card">
                 {trades.data.slice(0, 20).map((t) => (
-                  <li key={t.trade_id} className="flex items-center justify-between px-4 py-3 text-sm">
-                    <span className="flex items-center gap-2">
-                      <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase", t.side === "buy" ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss")}>{t.side}</span>
-                      <Link to={`/app/stock/${t.symbol}`} className="font-medium hover:text-primary">{t.symbol}</Link>
-                      <span className="text-muted-foreground">{qty(t.quantity)} @ {money(t.price)}</span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">{fromUnix(t.executed_at)}</span>
+                  <li key={t.trade_id} className="px-4 py-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase", t.side === "buy" ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss")}>{t.side}</span>
+                        <Link to={`/app/stock/${t.symbol}`} className="font-medium hover:text-primary">{t.symbol}</Link>
+                        <span className="text-muted-foreground">{qty(t.quantity)} @ {money(t.price)}</span>
+                      </span>
+                      <span className="text-xs text-muted-foreground">{fromUnix(t.executed_at)}</span>
+                    </div>
+                    {t.reason && <p className="mt-1 text-[11px] italic text-muted-foreground">“{t.reason}”</p>}
                   </li>
                 ))}
               </ul>

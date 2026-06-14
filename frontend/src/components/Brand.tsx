@@ -27,7 +27,7 @@ export function Brand({ className, mark = "h-9 w-9", text = "text-lg" }: BrandPr
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <LogoMark className={mark} />
-      <span className={cn("font-semibold tracking-tight", text)}>
+      <span className={cn("font-display font-semibold tracking-tight", text)}>
         Simpli<span className="text-primary">Trade</span>
       </span>
     </div>

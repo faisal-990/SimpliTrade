@@ -3,9 +3,9 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/faisal-990/ProjectInvestApp/internal/platform/utils"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/dto"
 	"github.com/faisal-990/ProjectInvestApp/internal/web/service"
-	"github.com/faisal-990/ProjectInvestApp/internal/platform/utils"
 	"github.com/gin-gonic/gin"
 )
 

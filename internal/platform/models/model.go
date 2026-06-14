@@ -110,8 +110,8 @@ type Investor struct {
 // =======================
 type Follow struct {
 	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	InvestorID uuid.UUID `gorm:"type:uuid;not null;index"`
-	FollowerID uuid.UUID `gorm:"type:uuid;not null;index"`
+	InvestorID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_follow_pair;index"`
+	FollowerID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_follow_pair;index"`
 	CreatedAt  time.Time
 	Investor   Investor `gorm:"foreignKey:InvestorID;constraint:OnDelete:CASCADE"`
 	Follower   User     `gorm:"foreignKey:FollowerID;constraint:OnDelete:CASCADE"`

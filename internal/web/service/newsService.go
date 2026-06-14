@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	//"time"
 
-	"github.com/faisal-990/ProjectInvestApp/internal/web/dto"
 	"github.com/faisal-990/ProjectInvestApp/internal/platform/utils"
+	"github.com/faisal-990/ProjectInvestApp/internal/web/dto"
 )
 
 type News interface {

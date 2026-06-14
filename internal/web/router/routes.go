@@ -49,6 +49,9 @@ func InitializeRoutes(
 		investorGroup.DELETE("/:id/follow", investorHandler.HandleUnfollowInvestor)
 	}
 
+	// Aggregated feed of the investors the caller follows (protected).
+	api.GET("/feed", authMW, investorHandler.HandleGetFeed)
+
 	// Trade routes (protected).
 	tradeGroup := api.Group("/trade")
 	tradeGroup.Use(authMW)

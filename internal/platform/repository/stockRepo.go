@@ -23,6 +23,9 @@ type StockRepo interface {
 
 	InsertCandle(ctx context.Context, price *models.StockPrice) error
 	GetCandles(ctx context.Context, symbol, interval string, limit int) ([]models.StockPrice, error)
+
+	// UpdatePrice sets a stock's current price (used by the engine market poller).
+	UpdatePrice(ctx context.Context, symbol string, price float64) error
 }
 
 type stockRepo struct {
@@ -82,6 +85,13 @@ func (r *stockRepo) ListSymbols(ctx context.Context) ([]string, error) {
 
 func (r *stockRepo) InsertCandle(ctx context.Context, price *models.StockPrice) error {
 	return r.DB.WithContext(ctx).Create(price).Error
+}
+
+func (r *stockRepo) UpdatePrice(ctx context.Context, symbol string, price float64) error {
+	return r.DB.WithContext(ctx).
+		Model(&models.Stock{}).
+		Where("symbol = ?", symbol).
+		Update("current_price", price).Error
 }
 
 func (r *stockRepo) GetCandles(ctx context.Context, symbol, interval string, limit int) ([]models.StockPrice, error) {

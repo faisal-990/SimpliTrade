@@ -34,6 +34,7 @@ type Config struct {
 	// Market holds the external market-data provider settings. Keys are optional
 	// today (FakeProvider needs none) and wired in at the end of the build.
 	Market MarketConfig
+	Engine EngineConfig
 }
 
 type HTTPConfig struct {
@@ -67,6 +68,12 @@ type AuthConfig struct {
 type MarketConfig struct {
 	Provider string // "fake" until a real provider is wired in
 	APIKey   string
+}
+
+// EngineConfig governs the strategy daemon (Tower 2).
+type EngineConfig struct {
+	TickInterval  time.Duration // how often the engine refreshes + decides
+	StrategiesDir string        // directory of investor strategy YAMLs
 }
 
 // devJWTSecret is the only insecure fallback we tolerate, and only outside prod.
@@ -108,6 +115,10 @@ func Load() (*Config, error) {
 		Market: MarketConfig{
 			Provider: getString("MARKET_PROVIDER", "fake"),
 			APIKey:   getString("MARKET_API_KEY", ""),
+		},
+		Engine: EngineConfig{
+			TickInterval:  getDuration("ENGINE_TICK_INTERVAL", 60*time.Second),
+			StrategiesDir: getString("ENGINE_STRATEGIES_DIR", "internal/engine/strategies"),
 		},
 	}
 
